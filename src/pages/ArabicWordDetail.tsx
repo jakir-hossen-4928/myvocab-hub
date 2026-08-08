@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useArabicVocabularies, useArabicVocabularyMutations } from "@/hooks/useArabicVocabularies";
 import type { ArabicVocabulary } from "@/types/arabicVocabulary";
 import { speakText } from "@/services/ttsService";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 
@@ -72,7 +71,6 @@ export default function ArabicWordDetail() {
           <Button variant="outline" onClick={() => navigate("/arabic-vocabularies")}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <LanguageSwitcher compact />
           {isAdmin && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate(`/admin/arabic-vocabularies/${word.id}/edit`)}>

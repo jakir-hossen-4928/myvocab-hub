@@ -17,7 +17,6 @@ import { useSwipe } from "@/hooks/useSwipe";
 import { Helmet } from "react-helmet-async";
 import { CachedImage } from "@/components/CachedImage";
 import { useAuth } from "@/contexts/AuthContext";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { confirmAction } from "@/utils/sweetAlert";
 
 const SwipeHint = ({ onDismiss }: { onDismiss: () => void }) => (
@@ -221,8 +220,7 @@ export default function ArabicResourceDetail() {
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </>
-                        )}
-                        <LanguageSwitcher compact />
+)}
                         <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-full">
                             <Share2 className="h-4 w-4" />
                         </Button>
