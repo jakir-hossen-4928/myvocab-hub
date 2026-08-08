@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useVocabularies } from "@/hooks/useVocabularies";
+import { useArabicVocabularies } from "@/hooks/useArabicVocabularies";
+import { ArabicVocabulary } from "@/types/arabicVocabulary";
 import { checkBulkVocabularyDuplicates, getDuplicateStats, filterNonDuplicates } from "@/utils/vocabularyDuplicateChecker";
+
+type BulkMode = "english" | "arabic";
 
 interface BulkVocabulary {
     english: string;
@@ -30,6 +34,12 @@ interface BulkVocabulary {
     examples?: { en: string; bn: string }[];
     verbForms?: VerbForms;
     relatedWords?: RelatedWord[];
+    // Arabic mode fields
+    arabic?: string;
+    transliteration?: string;
+    category?: string;
+    example?: string;
+    exampleBangla?: string;
 }
 
 const TEMPLATE_DATA = [
@@ -229,11 +239,92 @@ Format the output as JSON array matching this structure: ${JSON.stringify(TEMPLA
 `;
 
 
+const ARABIC_TEMPLATE_DATA = [
+    {
+        "arabic": "السلام عليكم",
+        "transliteration": "আস-সালামু আলাইকুম",
+        "bangla": "আপনার উপর শান্তি বর্ষিত হোক (সালাম)",
+        "english": "Peace be upon you (greeting)",
+        "category": "greetings",
+        "example": "السلام عليكم، كيف حالك؟",
+        "exampleBangla": "আসসালামু আলাইকুম, কেমন আছেন?"
+    },
+    {
+        "arabic": "كم الثمن؟",
+        "transliteration": "কাম আস-সামান?",
+        "bangla": "দাম কত?",
+        "english": "How much is the price?",
+        "category": "phrases",
+        "example": "كم الثمن لهذا القميص؟",
+        "exampleBangla": "এই শার্টটির দাম কত?"
+    },
+    {
+        "arabic": "ماء",
+        "transliteration": "মা'",
+        "bangla": "পানি",
+        "english": "Water",
+        "category": "food",
+        "example": "أريد كوبا من الماء",
+        "exampleBangla": "আমি এক গ্লাস পানি চাই"
+    }
+];
+
+const ARABIC_AI_PROMPT = `
+Generate common, practical Arabic vocabulary words and phrases in the Saudi dialect (اللهجة السعودية) for a Bangladeshi learner relocating to or working in Saudi Arabia. The words should be everyday, conversational, and essential for daily life, work, shopping, and travel.
+
+Each vocabulary entry must include:
+- Arabic word or phrase in correct Arabic script (Saudi dialect where applicable)
+- Transliteration written in BANGLA letters (NO Arabic or English letters) so a Bengali speaker can pronounce it aloud
+- Bangla meaning: natural, native Bangladeshi Bangla, concise (one line). If two meanings exist, separate with a comma. Never use "/" in the bangla field.
+- English translation
+- Category: ALWAYS assign exactly ONE category id, chosen ONLY from this allowed list. Use the matching meaning below to pick the correct one:
+  - "greetings" → সালাম ও সম্ভাষণ / greetings
+  - "phrases" → সাধারণ বাক্য / common phrases
+  - "time" → সময় / time
+  - "places" → জায়গা / places
+  - "family" → পরিবার / family
+  - "food" → খাবার ও পানীয় / food and drink
+  - "numbers" → সংখ্যা / numbers
+  - "colors" → রং / colors
+  - "questions" → প্রশ্ন / questions
+  - "work" → কাজ ও জীবিকা / work
+  - "daily" → দৈনন্দিন জীবন / daily life
+  - "general" → সাধারণ / general
+
+  Only use "general" if the word does not clearly fit any other category. Never invent a category id outside this list.
+- One practical example sentence in Arabic using the word
+- Bangla translation of the example sentence
+
+Format the output as a JSON array matching this structure:
+[
+  {
+    "arabic": "السلام عليكم",
+    "transliteration": "আস-সালামু আলাইকুম",
+    "bangla": "আপনার উপর শান্তি বর্ষিত হোক (সালাম)",
+    "english": "Peace be upon you (greeting)",
+    "category": "greetings",
+    "example": "السلام عليكم، كيف حالك؟",
+    "exampleBangla": "আসসালামু আলাইকুম, কেমন আছেন?"
+  }
+]
+
+Rules:
+- bangla meaning must be clear and native Bangladeshi Bangla, never unclear or machine-like
+- example sentence must be grammatically correct Arabic
+- transliteration must be pronounceable by a Bengali speaker using Bangla letters only
+- "category" must always be exactly one of: greetings, phrases, time, places, family, food, numbers, colors, questions, work, daily, general
+- Return ONLY valid JSON. No markdown, no extra text.
+`;
+
+
 export default function BulkAddVocabulary() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user, isAdmin } = useAuth();
     const { data: existingVocabularies = [] } = useVocabularies();
+    const { data: existingArabicVocabularies = [] } = useArabicVocabularies();
+    const [searchParams] = useSearchParams();
+    const [mode, setMode] = useState<BulkMode>(searchParams.get("lang") === "arabic" ? "arabic" : "english");
     const [loading, setLoading] = useState(false);
     const [jsonInput, setJsonInput] = useState("");
     const [csvInput, setCsvInput] = useState("");
@@ -265,19 +356,31 @@ export default function BulkAddVocabulary() {
         let content = "";
 
         if (type === "json") {
-            content = JSON.stringify(TEMPLATE_DATA, null, 2);
+            content = JSON.stringify(mode === "arabic" ? ARABIC_TEMPLATE_DATA : TEMPLATE_DATA, null, 2);
         } else if (type === "csv") {
-            const headers = "english,bangla,partOfSpeech,pronunciation,explanation,synonyms,antonyms,examples_en,examples_bn";
-            const rows = TEMPLATE_DATA.map(item =>
-                `"${item.english}","${item.bangla}","${item.partOfSpeech}","${item.pronunciation}","${item.explanation}","${item.synonyms?.join(';') || ''}","${item.antonyms?.join(';') || ''}","${item.examples?.[0]?.en || ''}","${item.examples?.[0]?.bn || ''}"`
-            );
-            content = [headers, ...rows].join("\n");
+            if (mode === "arabic") {
+                const headers = "arabic,transliteration,bangla,english,category,example,exampleBangla";
+                const rows = ARABIC_TEMPLATE_DATA.map(item =>
+                    `"${item.arabic}","${item.transliteration}","${item.bangla}","${item.english}","${item.category}","${item.example}","${item.exampleBangla}"`
+                );
+                content = [headers, ...rows].join("\n");
+            } else {
+                const headers = "english,bangla,partOfSpeech,pronunciation,explanation,synonyms,antonyms,examples_en,examples_bn";
+                const rows = TEMPLATE_DATA.map(item =>
+                    `"${item.english}","${item.bangla}","${item.partOfSpeech}","${item.pronunciation}","${item.explanation}","${item.synonyms?.join(';') || ''}","${item.antonyms?.join(';') || ''}","${item.examples?.[0]?.en || ''}","${item.examples?.[0]?.bn || ''}"`
+                );
+                content = [headers, ...rows].join("\n");
+            }
         } else {
-            content = AI_PROMPT;
+            content = mode === "arabic" ? ARABIC_AI_PROMPT : AI_PROMPT;
         }
 
         navigator.clipboard.writeText(content);
-        toast.success(type === "prompt" ? "AI prompt copied!" : "Template copied to clipboard!");
+        toast.success(
+            type === "prompt"
+                ? "AI prompt copied!"
+                : "Template copied to clipboard!"
+        );
     };
 
     const parseCSV = (csv: string): BulkVocabulary[] => {
@@ -313,7 +416,11 @@ export default function BulkAddVocabulary() {
                 }
             });
 
-            if (row.english && row.bangla) {
+            if (mode === "arabic") {
+                if (row.arabic && row.transliteration && row.bangla) {
+                    data.push(row);
+                }
+            } else if (row.english && row.bangla) {
                 data.push(row);
             }
         }
@@ -322,6 +429,15 @@ export default function BulkAddVocabulary() {
     };
 
     const validateVocabulary = (vocab: BulkVocabulary): string | null => {
+        if (mode === "arabic") {
+            if (!vocab.arabic || !vocab.transliteration || !vocab.bangla) {
+                return "Arabic, transliteration, and Bangla fields are required";
+            }
+            if (!vocab.arabic!.trim() || !vocab.transliteration!.trim() || !vocab.bangla.trim()) {
+                return "Arabic, transliteration, and Bangla cannot be empty";
+            }
+            return null;
+        }
         if (!vocab.english || !vocab.bangla) {
             return "English and Bangla fields are required";
         }
@@ -348,6 +464,7 @@ export default function BulkAddVocabulary() {
         };
 
         const successfulVocabs: Vocabulary[] = [];
+        const successfulArabicVocabs: ArabicVocabulary[] = [];
 
         try {
             const batch = writeBatch(db);
@@ -364,35 +481,54 @@ export default function BulkAddVocabulary() {
                 }
 
                 try {
-                    const docRef = doc(collection(db, "vocabularies"));
-                    const data: Omit<Vocabulary, "id"> = {
-                        english: vocab.english.trim(),
-                        bangla: vocab.bangla.trim(),
-                        partOfSpeech: vocab.partOfSpeech || "",
-                        pronunciation: vocab.pronunciation || "",
-                        explanation: vocab.explanation || "",
-                        synonyms: vocab.synonyms || [],
-                        antonyms: vocab.antonyms || [],
-                        examples: vocab.examples || [],
-                        userId: user!.uid,
-                        createdAt: timestamp,
-                        updatedAt: timestamp,
-                    };
+                    if (mode === "arabic") {
+                        const docRef = doc(collection(db, "arabicVocabulary"));
+                        const data: Omit<ArabicVocabulary, "id"> = {
+                            arabic: vocab.arabic!.trim(),
+                            transliteration: vocab.transliteration!.trim(),
+                            bangla: vocab.bangla.trim(),
+                            english: vocab.english || "",
+                            example: vocab.example || "",
+                            exampleBangla: vocab.exampleBangla || "",
+                            category: vocab.category || "general",
+                            userId: user!.uid,
+                            createdAt: timestamp,
+                            updatedAt: timestamp,
+                        };
+                        batch.set(docRef, data);
+                        successfulArabicVocabs.push({ id: docRef.id, ...data } as ArabicVocabulary);
+                        results.success++;
+                    } else {
+                        const docRef = doc(collection(db, "vocabularies"));
+                        const data: Omit<Vocabulary, "id"> = {
+                            english: vocab.english.trim(),
+                            bangla: vocab.bangla.trim(),
+                            partOfSpeech: vocab.partOfSpeech || "",
+                            pronunciation: vocab.pronunciation || "",
+                            explanation: vocab.explanation || "",
+                            synonyms: vocab.synonyms || [],
+                            antonyms: vocab.antonyms || [],
+                            examples: vocab.examples || [],
+                            userId: user!.uid,
+                            createdAt: timestamp,
+                            updatedAt: timestamp,
+                        };
 
-                    const isVerb = vocab.partOfSpeech?.toLowerCase().includes("verb");
-                    if (isVerb && vocab.verbForms) {
-                        data.verbForms = vocab.verbForms;
+                        const isVerb = vocab.partOfSpeech?.toLowerCase().includes("verb");
+                        if (isVerb && vocab.verbForms) {
+                            data.verbForms = vocab.verbForms;
+                        }
+
+                        if (vocab.relatedWords && vocab.relatedWords.length > 0) {
+                            data.relatedWords = vocab.relatedWords;
+                        }
+
+                        batch.set(docRef, data);
+
+                        // Store for Dexie caching
+                        successfulVocabs.push({ id: docRef.id, ...data } as Vocabulary);
+                        results.success++;
                     }
-
-                    if (vocab.relatedWords && vocab.relatedWords.length > 0) {
-                        data.relatedWords = vocab.relatedWords;
-                    }
-
-                    batch.set(docRef, data);
-
-                    // Store for Dexie caching
-                    successfulVocabs.push({ id: docRef.id, ...data } as Vocabulary);
-                    results.success++;
                 } catch (err) {
                     results.failed++;
                     results.errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -403,15 +539,20 @@ export default function BulkAddVocabulary() {
             if (results.success > 0) {
                 await batch.commit();
 
-                // Cache in Dexie for instant access
-                await dexieService.addVocabularies(successfulVocabs);
-                await dexieService.updateSyncMetadata('vocabularies');
-                console.log(`[Dexie] Cached ${successfulVocabs.length} bulk uploaded vocabularies`);
+                if (mode === "arabic") {
+                    await dexieService.addArabicVocabularies(successfulArabicVocabs);
+                    await dexieService.updateSyncMetadata('arabicVocabularies');
+                    console.log(`[Dexie] Cached ${successfulArabicVocabs.length} bulk uploaded arabic vocabularies`);
+                    await queryClient.invalidateQueries({ queryKey: ["arabic-vocabularies"] });
+                } else {
+                    // Cache in Dexie for instant access
+                    await dexieService.addVocabularies(successfulVocabs);
+                    await dexieService.updateSyncMetadata('vocabularies');
+                    console.log(`[Dexie] Cached ${successfulVocabs.length} bulk uploaded vocabularies`);
 
-                // Sync successful
-
-                // Invalidate React Query cache to update UI automatically
-                await queryClient.invalidateQueries({ queryKey: ["vocabularies"] });
+                    // Invalidate React Query cache to update UI automatically
+                    await queryClient.invalidateQueries({ queryKey: ["vocabularies"] });
+                }
 
                 toast.success(`Successfully uploaded ${results.success} vocabularies`);
             }
@@ -465,19 +606,39 @@ export default function BulkAddVocabulary() {
         });
 
         // Check for duplicates in valid vocabularies
-        const duplicateCheckResults = checkBulkVocabularyDuplicates(validVocabs, existingVocabularies);
-        const duplicateStats = getDuplicateStats(duplicateCheckResults);
+        let duplicateCheckResults;
+        let duplicateStats;
+        let duplicateEntries;
+
+        if (mode === "arabic") {
+            duplicateCheckResults = validVocabs.map(vocab => {
+                const duplicates = existingArabicVocabularies.filter(existing => {
+                    const sameArabic = vocab.arabic && existing.arabic?.toLowerCase() === vocab.arabic!.toLowerCase();
+                    const sameBangla = existing.bangla?.toLowerCase() === vocab.bangla.toLowerCase();
+                    return !!(sameArabic || sameBangla);
+                });
+                return { index: validVocabs.indexOf(vocab), isDuplicate: duplicates.length > 0, duplicates, vocabulary: vocab };
+            });
+            duplicateStats = {
+                duplicates: duplicateCheckResults.filter(r => r.isDuplicate).length,
+                sameWordDifferentPos: 0,
+                duplicateList: duplicateCheckResults.filter(r => r.isDuplicate),
+            };
+            duplicateEntries = duplicateCheckResults.filter(r => r.isDuplicate);
+        } else {
+            duplicateCheckResults = checkBulkVocabularyDuplicates(validVocabs, existingVocabularies);
+            duplicateStats = getDuplicateStats(duplicateCheckResults);
+            duplicateEntries = duplicateCheckResults.filter(r => r.isDuplicate);
+        }
 
         // Filter out duplicates from the list
-        const duplicateEntries = duplicateCheckResults.filter(r => r.isDuplicate);
-
         setValidationPreview({
             total: vocabularies.length,
             valid: validVocabs.length,
             invalid: errors.length,
             errors,
             vocabularies: validVocabs,
-            duplicates: duplicateStats.duplicates,
+            duplicates: duplicateStats!.duplicates,
             duplicateList: duplicateEntries.map(d => ({
                 index: d.index,
                 vocabulary: d.vocabulary as BulkVocabulary,
@@ -502,10 +663,22 @@ export default function BulkAddVocabulary() {
         }
 
         // Filter out duplicates before uploading
-        const duplicateCheckResults = checkBulkVocabularyDuplicates(
-            validationPreview.vocabularies,
-            existingVocabularies
-        );
+        let duplicateCheckResults;
+        if (mode === "arabic") {
+            duplicateCheckResults = validationPreview.vocabularies.map(vocab => {
+                const duplicates = existingArabicVocabularies.filter(existing => {
+                    const sameArabic = vocab.arabic && existing.arabic?.toLowerCase() === vocab.arabic!.toLowerCase();
+                    const sameBangla = existing.bangla?.toLowerCase() === vocab.bangla.toLowerCase();
+                    return !!(sameArabic || sameBangla);
+                });
+                return { index: validationPreview.vocabularies.indexOf(vocab), isDuplicate: duplicates.length > 0, duplicates };
+            });
+        } else {
+            duplicateCheckResults = checkBulkVocabularyDuplicates(
+                validationPreview.vocabularies,
+                existingVocabularies
+            );
+        }
         const nonDuplicateVocabs = filterNonDuplicates(
             validationPreview.vocabularies,
             duplicateCheckResults
@@ -544,10 +717,38 @@ export default function BulkAddVocabulary() {
                     >
                         <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
-                    <h1 className="text-xl sm:text-2xl font-bold mb-1">Bulk Add Vocabularies</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold mb-1">
+                        Bulk Add {mode === "arabic" ? "Arabic" : "English"} Vocabularies
+                    </h1>
                     <p className="text-primary-foreground/80 text-xs sm:text-sm">
-                        Upload multiple words at once using JSON or CSV format
+                        {mode === "arabic"
+                            ? "Upload multiple Saudi Arabic words at once using JSON or CSV format"
+                            : "Upload multiple words at once using JSON or CSV format"}
                     </p>
+
+                    {/* Language Toggle */}
+                    <div className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 p-1 border border-white/20">
+                        {(["english", "arabic"] as BulkMode[]).map((m) => (
+                            <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                    setMode(m);
+                                    setJsonInput("");
+                                    setCsvInput("");
+                                    setValidationPreview(null);
+                                    setUploadResults(null);
+                                }}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
+                                    mode === m
+                                        ? "bg-white text-primary shadow-sm"
+                                        : "text-primary-foreground/80 hover:bg-white/10"
+                                }`}
+                            >
+                                {m === "arabic" ? "العربية" : "English"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </motion.header>
 
@@ -652,7 +853,9 @@ export default function BulkAddVocabulary() {
                                     id="json-input"
                                     value={jsonInput}
                                     onChange={(e) => setJsonInput(e.target.value)}
-                                    placeholder={`[\n  {\n    "english": "Serendipity",\n    "bangla": "আকস্মিক সৌভাগ্য",\n    "partOfSpeech": "Noun",\n    "pronunciation": "সেরেনডিপিটি",\n    "explanation": "The occurrence of events by chance",\n    "synonyms": ["luck", "fortune", "chance", "providence", "happenstance"],\n    "antonyms": ["misfortune", "bad luck", "unluckiness", "adversity", "calamity"],\n    "examples": [{"en": "Example sentence", "bn": "উদাহরণ বাক্য"}]\n  }\n]`}
+                                    placeholder={mode === "arabic"
+                                        ? `[\n  {\n    "arabic": "السلام عليكم",\n    "transliteration": "আস-সালামু আলাইকুম",\n    "bangla": "আপনার উপর শান্তি বর্ষিত হোক",\n    "english": "Peace be upon you",\n    "category": "greetings",\n    "example": "السلام عليكم، كيف حالك؟",\n    "exampleBangla": "আসসালামু আলাইকুম, কেমন আছেন?"\n  }\n]`
+                                        : `[\n  {\n    "english": "Serendipity",\n    "bangla": "আকস্মিক সৌভাগ্য",\n    "partOfSpeech": "Noun",\n    "pronunciation": "সেরেনডিপিটি",\n    "explanation": "The occurrence of events by chance",\n    "synonyms": ["luck", "fortune", "chance", "providence", "happenstance"],\n    "antonyms": ["misfortune", "bad luck", "unluckiness", "adversity", "calamity"],\n    "examples": [{"en": "Example sentence", "bn": "উদাহরণ বাক্য"}]\n  }\n]`}
                                     className="min-h-[250px] sm:min-h-[300px] font-mono text-xs sm:text-sm"
                                 />
                                 <Button
@@ -715,7 +918,9 @@ export default function BulkAddVocabulary() {
                                     id="csv-input"
                                     value={csvInput}
                                     onChange={(e) => setCsvInput(e.target.value)}
-                                    placeholder={`english,bangla,partOfSpeech,pronunciation,explanation,synonyms,antonyms,examples_en,examples_bn\n"Serendipity","আকস্মিক সৌভাগ্য","Noun","সেরেনডিপিটি","The occurrence of events by chance","luck;fortune;chance;providence;happenstance","misfortune;bad luck;unluckiness;adversity;calamity","Example sentence","উদাহরণ বাক্য"`}
+                                    placeholder={mode === "arabic"
+                                        ? `arabic,transliteration,bangla,english,category,example,exampleBangla\n"السلام عليكم","আস-সালামু আলাইকুম","আপনার উপর শান্তি বর্ষিত হোক","Peace be upon you","greetings","السلام عليكم، كيف حالك؟","আসসালামু আলাইকুম, কেমন আছেন?"`
+                                        : `english,bangla,partOfSpeech,pronunciation,explanation,synonyms,antonyms,examples_en,examples_bn\n"Serendipity","আকস্মিক সৌভাগ্য","Noun","সেরেনডিপিটি","The occurrence of events by chance","luck;fortune;chance;providence;happenstance","misfortune;bad luck;unluckiness;adversity;calamity","Example sentence","উদাহরণ বাক্য"`}
                                     className="min-h-[250px] sm:min-h-[300px] font-mono text-xs sm:text-sm"
                                 />
                                 <Button
@@ -788,7 +993,7 @@ export default function BulkAddVocabulary() {
                                             <div className="max-h-40 overflow-y-auto space-y-2">
                                                 {validationPreview.duplicateList?.slice(0, 5).map((dup, idx) => (
                                                     <div key={idx} className="text-xs p-2 bg-background/50 rounded border border-amber-200 dark:border-amber-800">
-                                                        <p><strong>Row {dup.index + 1}:</strong> "{dup.vocabulary.english}" ({dup.vocabulary.partOfSpeech})</p>
+                                                        <p><strong>Row {dup.index + 1}:</strong> "{mode === "arabic" ? dup.vocabulary.arabic : dup.vocabulary.english}" ({mode === "arabic" ? dup.vocabulary.transliteration : dup.vocabulary.partOfSpeech})</p>
                                                         <p className="text-muted-foreground">Matches existing: {dup.duplicates.map(d => d.bangla).join(", ")}</p>
                                                     </div>
                                                 ))}
@@ -880,7 +1085,7 @@ export default function BulkAddVocabulary() {
                                     >
                                         Upload More
                                     </Button>
-                                    <Button onClick={() => navigate("/vocabularies")} className="flex-1 h-9 sm:h-10 text-sm sm:text-base">
+                                    <Button onClick={() => navigate(mode === "arabic" ? "/arabic-vocabularies" : "/vocabularies")} className="flex-1 h-9 sm:h-10 text-sm sm:text-base">
                                         View Vocabularies
                                     </Button>
                                 </div>
@@ -891,15 +1096,28 @@ export default function BulkAddVocabulary() {
                     {/* Instructions */}
                     <Card className="mt-4 sm:mt-6 p-4 sm:p-6 bg-muted/30">
                         <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Instructions</h3>
-                        <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                            <li>• Click "AI Prompt" to copy prompt for ChatGPT/Claude to generate IELTS 7+ vocabulary</li>
-                            <li>• Click "Copy Template" to get the correct format</li>
-                            <li>• Required fields: <code className="bg-muted px-1 py-0.5 rounded text-xs">english</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">bangla</code></li>
-                            <li>• Provide at least 5 synonyms and 5 antonyms for better learning</li>
-                            <li>• For CSV: Use semicolons (;) to separate multiple synonyms/antonyms</li>
-                            <li>• For JSON: Provide arrays for synonyms, antonyms, and examples</li>
-                            <li>• Maximum 500 words per upload for optimal performance</li>
-                        </ul>
+                        {mode === "arabic" ? (
+                            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
+                                <li>• Click "AI Prompt" to copy a ChatGPT/Claude prompt for Saudi Arabic vocabulary (with Bangla transliteration)</li>
+                                <li>• Click "Copy Template" to get the correct format</li>
+                                <li>• Required fields: <code className="bg-muted px-1 py-0.5 rounded text-xs">arabic</code>, <code className="bg-muted px-1 py-0.5 rounded text-xs">transliteration</code>, and <code className="bg-muted px-1 py-0.5 rounded text-xs">bangla</code></li>
+                                <li>• <code className="bg-muted px-1 py-0.5 rounded text-xs">transliteration</code> should be written in Bangla letters for easy pronunciation</li>
+                                <li>• <code className="bg-muted px-1 py-0.5 rounded text-xs">category</code> must be one of: greetings, phrases, time, places, family, food, numbers, colors, questions, work, daily, general</li>
+                                <li>• Include a practical Arabic example sentence and its Bangla translation when possible</li>
+                                <li>• For CSV: columns are arabic,transliteration,bangla,english,category,example,exampleBangla</li>
+                                <li>• Maximum 500 words per upload for optimal performance</li>
+                            </ul>
+                        ) : (
+                            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
+                                <li>• Click "AI Prompt" to copy prompt for ChatGPT/Claude to generate IELTS 7+ vocabulary</li>
+                                <li>• Click "Copy Template" to get the correct format</li>
+                                <li>• Required fields: <code className="bg-muted px-1 py-0.5 rounded text-xs">english</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">bangla</code></li>
+                                <li>• Provide at least 5 synonyms and 5 antonyms for better learning</li>
+                                <li>• For CSV: Use semicolons (;) to separate multiple synonyms/antonyms</li>
+                                <li>• For JSON: Provide arrays for synonyms, antonyms, and examples</li>
+                                <li>• Maximum 500 words per upload for optimal performance</li>
+                            </ul>
+                        )}
                     </Card>
                 </motion.div>
             </div>

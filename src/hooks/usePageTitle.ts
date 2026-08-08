@@ -35,6 +35,7 @@ const ROUTE_TITLES: Record<string, string> = {
     '/arabic-resources': 'Arabic Resources',
     '/admin/arabic-resources': 'Arabic Resources Admin',
     '/admin/arabic-resources/add': 'Create Arabic Resource',
+    '/admin/arabic-ai-enhancement-studio': 'Arabic AI Enhancement Studio',
     '/control-center': 'Control Center',
     '/study': 'Study',
 };

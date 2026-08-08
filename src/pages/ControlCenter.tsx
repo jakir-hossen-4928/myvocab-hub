@@ -63,6 +63,8 @@ const sections: ControlSection[] = [
       { title: "Resources", description: "Practical guides & articles", path: "/arabic-resources", icon: GraduationCap, accent: "text-teal-600 bg-teal-100 dark:bg-teal-500/15 dark:text-teal-400" },
       { title: "Arabic Resources Admin", description: "Manage Arabic learning posts", path: "/admin/arabic-resources", icon: FolderPlus, adminOnly: true, accent: "text-emerald-600 bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400" },
       { title: "Add Arabic Word", description: "Add a new Arabic (Saudi) word", path: "/admin/arabic-vocabularies/add", icon: Plus, adminOnly: true, accent: "text-emerald-600 bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400" },
+      { title: "Arabic Bulk Upload", description: "Upload many Arabic words at once", path: "/vocabularies/bulk-add?lang=arabic", icon: Upload, adminOnly: true, accent: "text-emerald-600 bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400" },
+      { title: "Arabic AI Enhancement Studio", description: "Polish and enhance Arabic vocabulary entries", path: "/admin/arabic-ai-enhancement-studio", icon: Sparkles, adminOnly: true, accent: "text-purple-600 bg-purple-100 dark:bg-purple-500/15 dark:text-purple-400" },
     ],
   },
   {

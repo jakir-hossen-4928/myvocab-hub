@@ -2,12 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 
 import { NetworkStatus } from "@/components/NetworkStatus";
+import { PlatformBootstrap } from "@/components/PlatformBootstrap";
 import { lazy, Suspense, useEffect } from "react";
 import Auth from "./authentication/Auth";
 import { Layout } from "@/layouts/Layout";
@@ -28,6 +29,7 @@ const ResourceDetail = lazy(() => import("./pages/ResourceDetail"));
 const ResourcesGallery = lazy(() => import("./pages/ResourcesGallery"));
 const AdminUsers = lazy(() => import("./admin/AdminUsers"));
 const AiEnhancementStudio = lazy(() => import("./admin/AiEnhancementStudio"));
+const ArabicAiEnhancementStudio = lazy(() => import("./admin/ArabicAiEnhancementStudio"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const DuplicateManager = lazy(() => import("./admin/DuplicateManager"));
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard"));
@@ -65,6 +67,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return user ? <>{children}</> : <Navigate to="/auth" />;
+};
+
+const ArabicEditRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/admin/arabic-vocabularies/edit/${id}`} replace />;
 };
 
 const AppRoutes = () => {
@@ -129,6 +136,7 @@ const AppRoutes = () => {
           <Route path="/admin/analytics" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/admin/ai-enhancement-studio" element={<AdminRoute><AiEnhancementStudio /></AdminRoute>} />
+          <Route path="/admin/arabic-ai-enhancement-studio" element={<AdminRoute><ArabicAiEnhancementStudio /></AdminRoute>} />
           <Route path="/admin/duplicates" element={<AdminRoute><DuplicateManager /></AdminRoute>} />
 
           <Route path="/admin/ielts-listening-builder" element={<AdminRoute><ListeningBuilder /></AdminRoute>} />
@@ -139,6 +147,7 @@ const AppRoutes = () => {
           {/* Arabic admin routes */}
           <Route path="/admin/arabic-vocabularies/add" element={<AdminRoute><AddArabicVocabulary /></AdminRoute>} />
           <Route path="/admin/arabic-vocabularies/edit/:id" element={<AdminRoute><AddArabicVocabulary /></AdminRoute>} />
+          <Route path="/admin/arabic-vocabularies/:id/edit" element={<AdminRoute><ArabicEditRedirect /></AdminRoute>} />
           <Route path="/admin/arabic-resources" element={<AdminRoute><AdminArabicResourceGallery /></AdminRoute>} />
           <Route path="/admin/arabic-resources/add" element={<AdminRoute><AddArabicResource /></AdminRoute>} />
           <Route path="/admin/arabic-resources/edit/:id" element={<AdminRoute><AddArabicResource /></AdminRoute>} />
@@ -166,6 +175,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <NetworkStatus />
+            <PlatformBootstrap />
             <BrowserRouter>
               <UTMProvider>
                 <AuthProvider>

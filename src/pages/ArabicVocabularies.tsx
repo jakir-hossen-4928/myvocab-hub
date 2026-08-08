@@ -1,17 +1,30 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Volume2, X } from "lucide-react";
+import { Search, Volume2, X, ListFilter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useArabicVocabularies } from "@/hooks/useArabicVocabularies";
 import { SAUDI_CATEGORIES, getCategoryById } from "@/data/saudiCategories";
 import { speakText } from "@/services/ttsService";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
+import type { ArabicVocabulary } from "@/types/arabicVocabulary";
+import { ArabicVocabularyDetailsModal } from "@/components/ArabicVocabularyDetailsModal";
+import { useViewPreference } from "@/hooks/useViewPreference";
+import { ViewPreferenceDialog } from "@/components/ViewPreferenceDialog";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useNative } from "@/hooks/useNative";
 
 const WordCardSkeleton = () => (
   <Card className="p-5 rounded-2xl h-full">
@@ -35,6 +48,56 @@ export default function ArabicVocabularies() {
   const [activeCategory, setActiveCategory] = useState(searchParams.get("category") || "");
   const { data: vocabularies = [], isLoading } = useArabicVocabularies(searchQuery);
 
+  // View preference + modal state (mirrors English Vocabularies)
+  const { preference, savePreference, clearPreference } = useViewPreference();
+  const [showPreferenceDialog, setShowPreferenceDialog] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<ArabicVocabulary | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const { favorites, toggleFavorite } = useFavorites();
+  const { haptic } = useNative();
+
+  const handleWordClick = (word: ArabicVocabulary) => {
+    if (isMobile) {
+      navigate(`/arabic-vocabularies/${word.id}`);
+      return;
+    }
+
+    if (!preference) {
+      setSelectedWord(word);
+      setShowPreferenceDialog(true);
+    } else if (preference === "modal") {
+      setSelectedWord(word);
+      setIsModalOpen(true);
+    } else {
+      navigate(`/arabic-vocabularies/${word.id}`);
+    }
+  };
+
+  const handlePreferenceSelect = (pref: "modal" | "page") => {
+    savePreference(pref);
+    setShowPreferenceDialog(false);
+
+    if (selectedWord) {
+      if (pref === "modal") {
+        setIsModalOpen(true);
+      } else {
+        navigate(`/arabic-vocabularies/${selectedWord.id}`);
+        setSelectedWord(null);
+      }
+    }
+  };
+
+  // Sync selectedWord with updated data from hook
+  useEffect(() => {
+    if (selectedWord && vocabularies.length > 0) {
+      const updated = vocabularies.find(v => v.id === selectedWord.id);
+      if (updated && updated !== selectedWord) {
+        setSelectedWord(updated);
+      }
+    }
+  }, [vocabularies, selectedWord]);
+
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: vocabularies.length };
     for (const v of vocabularies) {
@@ -48,6 +111,11 @@ export default function ArabicVocabularies() {
     if (!activeCategory) return vocabularies;
     return vocabularies.filter((v) => getCategoryById(v.category).id === activeCategory);
   }, [vocabularies, activeCategory]);
+
+  const selectedCategory = useMemo(
+    () => SAUDI_CATEGORIES.find((c) => c.id === activeCategory) || null,
+    [activeCategory]
+  );
 
   const handleCategory = (cat: string) => {
     setActiveCategory(cat);
@@ -83,7 +151,7 @@ export default function ArabicVocabularies() {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 -mt-8">
-        {/* Search & Add */}
+        {/* Search & Category filter */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -102,42 +170,43 @@ export default function ArabicVocabularies() {
               </button>
             )}
           </div>
-          {isAdmin && (
-            <Button onClick={() => navigate("/admin/arabic-vocabularies/add")} className="h-12 rounded-2xl font-bold shadow-lg">
-              <Plus className="mr-2 h-5 w-5" /> Add Word
-            </Button>
-          )}
-        </div>
-
-        {/* Category chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4 scrollbar-thin">
-          <button
-            onClick={() => handleCategory("")}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-colors ${
-              !activeCategory
-                ? "bg-emerald-600 text-white border-emerald-600"
-                : "bg-card text-muted-foreground border-border hover:border-emerald-400"
-            }`}
-          >
-            সবগুলো ({categoryCounts.all || 0})
-          </button>
-          {SAUDI_CATEGORIES.map((cat) => {
-            const count = categoryCounts[cat.id] || 0;
-            if (count === 0) return null;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => handleCategory(cat.id)}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-colors ${
-                  activeCategory === cat.id
-                    ? "bg-emerald-600 text-white border-emerald-600"
-                    : "bg-card text-muted-foreground border-border hover:border-emerald-400"
-                }`}
-              >
-                {cat.label} ({count})
-              </button>
-            );
-          })}
+          {/* Category dropdown */}
+          <div className="relative w-full sm:w-[240px] shrink-0">
+            <Select
+              value={activeCategory || "all"}
+              onValueChange={(val) => handleCategory(val === "all" ? "" : val)}
+            >
+              <SelectTrigger className="h-12 w-full rounded-2xl bg-card border-border shadow-lg font-bold text-sm px-3">
+                <SelectValue aria-hidden="true" className="sr-only" />
+                <ListFilter className="h-4 w-4 text-muted-foreground shrink-0 mr-2" />
+                <span className="truncate flex-1 text-left">
+                  {selectedCategory
+                    ? `${selectedCategory.label} (${categoryCounts[selectedCategory.id] || 0})`
+                    : "সবগুলো ক্যাটাগরি"}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  সবগুলো ({categoryCounts.all || 0})
+                </SelectItem>
+                {SAUDI_CATEGORIES.map((cat) => {
+                  const count = categoryCounts[cat.id] || 0;
+                  return (
+                    <SelectItem key={cat.id} value={cat.id} className="pr-8 py-2">
+                      <span className="flex items-center justify-between gap-3 flex-wrap w-full">
+                        <span>
+                          {cat.label} ({count})
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-normal" dir="rtl">
+                          {cat.transliteration}
+                        </span>
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Word list */}
@@ -166,25 +235,29 @@ export default function ArabicVocabularies() {
                   transition={{ delay: Math.min(index * 0.05, 0.5) }}
                 >
                   <Card
-                    onClick={() => navigate(`/arabic-vocabularies/${vocab.id}`)}
+                    onClick={() => handleWordClick(vocab)}
                     className="group cursor-pointer p-5 hover:shadow-xl hover:border-emerald-300 transition-all rounded-2xl h-full"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-2xl sm:text-3xl font-black text-foreground leading-none" dir="rtl">
-                        {vocab.arabic}
-                      </h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 leading-relaxed break-words">
+                          {vocab.bangla}
+                        </h3>
+                      </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); speakText(vocab.arabic); }}
-                        className="text-muted-foreground hover:text-emerald-600 transition-colors"
+                        className="text-muted-foreground hover:text-emerald-600 transition-colors flex-shrink-0 ml-2"
                         aria-label="Listen"
                       >
                         <Volume2 className="h-4 w-4" />
                       </button>
                     </div>
-                    <p className="text-sm font-mono text-muted-foreground/60 mb-1">{vocab.transliteration}</p>
-                    <p className="text-base font-bold text-emerald-700 dark:text-emerald-400 mb-2">{vocab.bangla}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-foreground leading-none mb-1 break-words" dir="rtl">
+                      {vocab.arabic}
+                    </p>
+                    <p className="text-sm font-mono text-muted-foreground/60 mb-2">{vocab.transliteration}</p>
                     {vocab.example && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 border-t pt-2 mt-2" dir="rtl">
+                      <p className="text-xs text-muted-foreground break-words border-t pt-2 mt-2" dir="rtl">
                         {vocab.example}
                       </p>
                     )}
@@ -195,6 +268,37 @@ export default function ArabicVocabularies() {
           </div>
         )}
       </div>
+
+      <ViewPreferenceDialog
+        open={showPreferenceDialog}
+        onSelect={handlePreferenceSelect}
+      />
+
+      <ArabicVocabularyDetailsModal
+        vocabulary={selectedWord}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        isFavorite={selectedWord ? favorites.includes(selectedWord.id) : false}
+        onToggleFavorite={(id) => {
+          haptic('light');
+          toggleFavorite(id);
+        }}
+        isAdmin={isAdmin}
+        onNext={() => {
+          const currentIndex = vocabularies.findIndex(v => v.id === selectedWord?.id);
+          if (currentIndex !== -1 && currentIndex < vocabularies.length - 1) {
+            setSelectedWord(vocabularies[currentIndex + 1]);
+          }
+        }}
+        onPrevious={() => {
+          const currentIndex = vocabularies.findIndex(v => v.id === selectedWord?.id);
+          if (currentIndex > 0) {
+            setSelectedWord(vocabularies[currentIndex - 1]);
+          }
+        }}
+        hasNext={selectedWord ? vocabularies.findIndex(v => v.id === selectedWord.id) !== -1 && vocabularies.findIndex(v => v.id === selectedWord.id) < vocabularies.length - 1 : false}
+        hasPrevious={selectedWord ? vocabularies.findIndex(v => v.id === selectedWord.id) > 0 : false}
+      />
     </div>
   );
 }

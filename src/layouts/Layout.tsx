@@ -6,6 +6,7 @@ import { MobileDrawer } from "@/navigation/MobileDrawer";
 import { MobileHeader } from "@/navigation/MobileHeader";
 import { useNative } from "@/hooks/useNative";
 import { useKeyboard } from "@/hooks/useKeyboard";
+import { usePlatform } from "@/hooks/usePlatform";
 
 export const Layout = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -13,8 +14,9 @@ export const Layout = () => {
         const saved = localStorage.getItem('sidebarCollapsed');
         return saved === 'true';
     });
-    const { setStatusBarColor } = useNative();
+    const { setStatusBarColor, isCapacitor } = useNative();
     const isKeyboardOpen = useKeyboard();
+    const { isNative } = usePlatform();
 
     useEffect(() => {
         // Set native status bar color to primary blue (approx matching #3b82f6)
@@ -35,14 +37,19 @@ export const Layout = () => {
 
     const location = useLocation();
 
+    // In the native app, always use the mobile-first layout:
+    // bottom nav for navigation and a compact top header. No desktop sidebar.
     return (
         <div className="min-h-screen bg-background">
-            <Sidebar />
+            {!isNative && <Sidebar />}
             <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
-            <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+            {!isNative && <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />}
             <main
-                className={`pb-[calc(4rem+var(--safe-area-bottom))] md:pb-0 min-h-screen pt-[calc(52px+var(--safe-area-top))] md:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
-                    }`}
+                className={`min-h-screen transition-all duration-300 ${
+                    isNative
+                        ? 'pt-[calc(52px+var(--safe-area-top))] pb-[calc(72px+var(--safe-area-bottom))]'
+                        : `pt-[calc(52px+var(--safe-area-top))] md:pt-0 pb-[calc(4rem+var(--safe-area-bottom))] md:pb-0 ${sidebarCollapsed ? 'md:pl-24' : 'md:pl-72'}`
+                }`}
             >
                 <Outlet />
             </main>

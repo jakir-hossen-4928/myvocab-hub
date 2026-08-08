@@ -99,23 +99,23 @@ export default function Study() {
     if (languageMode === "arabic") {
       return arabicWords.map((w) => ({
         id: w.id as string,
-        front: w.arabic,
-        back: w.bangla,
+        front: w.bangla,
+        back: w.arabic,
         transliteration: w.transliteration,
         isArabic: true,
       }));
     }
     return englishWords.map((w) => ({
       id: w.id as string,
-      front: w.english,
-      back: w.bangla,
+      front: w.bangla,
+      back: w.english,
       isArabic: false,
     }));
   }, [englishWords, arabicWords, languageMode]);
 
   const isLoading = loadingEnglish || loadingArabic;
 
-  const markReviewed = (id: string, wasCorrect: boolean, isForeign: boolean) => {
+  const markReviewed = (id: string, wasCorrect: boolean) => {
     setProgress((prev) => {
       const reviewed = prev.reviewed.includes(id) ? prev.reviewed : [...prev.reviewed, id];
       const counts = { ...prev.counts, [id]: (prev.counts[id] || 0) + 1 };
@@ -127,9 +127,6 @@ export default function Study() {
       saveProgress(next);
       return next;
     });
-    if (isForeign) {
-      speakText(cards.find((c) => c.id === id)?.front || "");
-    }
   };
 
   const reviewedToday = progress.reviewed.length;
@@ -314,7 +311,7 @@ const FlashcardDeck = ({
 }: {
   cards: FlashcardItem[];
   languageMode: LanguageMode;
-  onReview: (id: string, wasCorrect: boolean, isForeign: boolean) => void;
+  onReview: (id: string, wasCorrect: boolean) => void;
 }) => {
   const [current, setCurrent] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -326,6 +323,8 @@ const FlashcardDeck = ({
     setFlipped(false);
     setCurrent((prev) => (prev + 1) % cards.length);
   };
+
+  const targetLabel = languageMode === "arabic" ? "العربية" : "English";
 
   return (
     <div className="space-y-4">
@@ -339,26 +338,32 @@ const FlashcardDeck = ({
           {!flipped ? (
             <>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                Word {current + 1} / {cards.length}
+                Bangla · Word {current + 1} / {cards.length}
+              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">
+                বাংলা — বলুন / write it
               </p>
               <h2
                 className="text-4xl sm:text-5xl font-black text-foreground text-center leading-tight"
-                dir={languageMode === "arabic" ? "rtl" : "ltr"}
+                dir="ltr"
               >
                 {card.front}
+              </h2>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+                Answer · {targetLabel}
+              </p>
+              <h2
+                className="text-4xl sm:text-5xl font-black text-emerald-700 dark:text-emerald-400 text-center leading-tight"
+                dir={languageMode === "arabic" ? "rtl" : "ltr"}
+              >
+                {card.back}
               </h2>
               {card.transliteration && (
                 <p className="mt-3 font-mono text-muted-foreground">{card.transliteration}</p>
               )}
-            </>
-          ) : (
-            <>
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">
-                Meaning
-              </p>
-              <p className="text-3xl sm:text-4xl font-black text-emerald-700 dark:text-emerald-400 text-center leading-tight">
-                {card.back}
-              </p>
             </>
           )}
         </Card>
@@ -367,22 +372,20 @@ const FlashcardDeck = ({
       <p className="text-center text-xs text-muted-foreground">Tap the card to flip</p>
 
       <div className="flex items-center justify-between gap-3">
-        {card.isArabic && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => speakText(card.front)}
-            className="text-muted-foreground hover:text-emerald-600"
-            title="Listen"
-          >
-            <Volume2 className="h-5 w-5" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => speakText(flipped ? card.back : card.front)}
+          className={`text-muted-foreground hover:text-emerald-600 ${flipped ? "" : "sm:hidden"}`}
+          title={flipped ? "Listen to answer" : "Listen to Bangla"}
+        >
+          <Volume2 className="h-5 w-5" />
+        </Button>
         <div className="flex-1" />
-        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, true, card.isArabic); next(); }}>
+        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, true); next(); }}>
           <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" /> Got It
         </Button>
-        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, false, card.isArabic); next(); }}>
+        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, false); next(); }}>
           <XCircle className="h-4 w-4 mr-2 text-rose-500" /> Again
         </Button>
       </div>
@@ -397,7 +400,7 @@ const QuizPanel = ({
 }: {
   cards: FlashcardItem[];
   languageMode: LanguageMode;
-  onReview: (card: string, wasCorrect: boolean, isForeign: boolean) => void;
+  onReview: (id: string, wasCorrect: boolean) => void;
 }) => {
   const [questionSet, setQuestionSet] = useState<FlashcardItem[]>(() =>
     shuffle([...cards]).slice(0, 10)
@@ -463,7 +466,7 @@ const QuizPanel = ({
     setSelected(option);
     const correct = option === q.back;
     if (correct) setScore((s) => s + 1);
-    onReview(q.id, correct, isForeign);
+    onReview(q.id, correct);
   };
 
   const nextQuestion = () => {
@@ -490,24 +493,23 @@ const QuizPanel = ({
 
       <Card className="p-8 rounded-3xl border-border/70">
         <div className="flex items-center gap-2 mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          <Languages className="h-3.5 w-3.5" /> What is the Bangla meaning?
+          <Languages className="h-3.5 w-3.5" />
+          {languageMode === "arabic"
+            ? "What is the Arabic (العربية) word for this Bangla meaning?"
+            : "What is the English word for this Bangla meaning?"}
         </div>
         <div className="flex items-center justify-center gap-3 mb-6">
-          <h3
-            className="text-4xl sm:text-5xl font-black text-center leading-tight"
-            dir={languageMode === "arabic" ? "rtl" : "ltr"}
-          >
-            {q.front}
-          </h3>
-          {isForeign && (
-            <button
-              onClick={() => speakText(q.front)}
-              className="text-muted-foreground hover:text-emerald-600"
-              aria-label="Listen"
+          <div className="text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">
+              বাংলা — meaning
+            </p>
+            <h3
+              className="text-4xl sm:text-5xl font-black text-center leading-tight"
+              dir="ltr"
             >
-              <Volume2 className="h-5 w-5" />
-            </button>
-          )}
+              {q.front}
+            </h3>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3">
@@ -529,7 +531,16 @@ const QuizPanel = ({
               >
                 <div className="flex items-center gap-2">
                   {isChosen && (isAnswer ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />)}
-                  {option}
+                  <span dir={languageMode === "arabic" ? "rtl" : "ltr"}>{option}</span>
+                  {selected && isAnswer && isForeign && (
+                    <button
+                      onClick={() => speakText(option)}
+                      className="ml-auto text-muted-foreground hover:text-emerald-600"
+                      aria-label="Listen to answer"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </button>
             );

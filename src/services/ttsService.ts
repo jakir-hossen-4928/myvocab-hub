@@ -4,6 +4,36 @@ const PREFERRED_PITCH_KEY = 'tts_pitch_preference';
 
 let voicesCache: SpeechSynthesisVoice[] = [];
 
+// Detect the language script of the text to pick the right voice
+const detectLang = (text: string): string => {
+  if (!text) return 'en-US';
+  // Arabic script range: U+0600–U+06FF, U+0750–U+077F, U+08A0–U+08FF
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(text)) return 'ar';
+  // Bengali script range: U+0980–U+09FF
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn';
+  return 'en';
+};
+
+const findVoice = (lang: string, preferredName: string | null): SpeechSynthesisVoice | null => {
+  // 1. Explicit user preference
+  if (preferredName) {
+    const preferred = voicesCache.find(v => v.name === preferredName);
+    if (preferred) return preferred;
+  }
+
+  const prefix = lang.split('-')[0];
+
+  // 2. Local voice matching the target language
+  const local = voicesCache.find(v => v.lang.toLowerCase().startsWith(prefix) && v.localService);
+  if (local) return local;
+
+  // 3. Any voice matching the target language
+  const any = voicesCache.find(v => v.lang.toLowerCase().startsWith(prefix));
+  if (any) return any;
+
+  return null;
+};
+
 export const loadVoices = (): Promise<SpeechSynthesisVoice[]> => {
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -71,23 +101,19 @@ export const speakText = async (text: string) => {
     await loadVoices();
   }
 
+  const lang = detectLang(text);
   const utterance = new SpeechSynthesisUtterance(text);
 
-  // Find preferred voice
+  // Pick a voice matching the detected language
   const preferredName = getStoredVoiceName();
-  let selectedVoice = voicesCache.find(v => v.name === preferredName);
-
-  // Fallback logic: prefer local English voice, then any English voice
-  if (!selectedVoice) {
-    selectedVoice = voicesCache.find(v => v.lang.startsWith('en') && v.localService) ||
-      voicesCache.find(v => v.lang.startsWith('en'));
-  }
+  const selectedVoice = findVoice(lang, preferredName);
 
   if (selectedVoice) {
     utterance.voice = selectedVoice;
   } else {
-    // Fallback lang if no voice found
-    utterance.lang = 'en-US';
+    // Fallback: at least set the correct language (browser default voice)
+    const langTag = lang === 'ar' ? 'ar-SA' : lang === 'bn' ? 'bn-BD' : 'en-US';
+    utterance.lang = langTag;
   }
 
   utterance.rate = getStoredRate();

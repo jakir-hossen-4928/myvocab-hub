@@ -1,0 +1,13 @@
+{
+    "icon": {
+        "android": {
+            "foreground": "resources/icon-only.png",
+            "background": "#ffffff"
+        }
+    },
+    "splash": {
+        "android": {
+            "drawable": "resources/splash.png"
+        }
+    }
+}
