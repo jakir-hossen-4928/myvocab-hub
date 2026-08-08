@@ -43,7 +43,7 @@ export const Layout = () => {
         <div className="min-h-screen bg-background">
             {!isNative && <Sidebar />}
             <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
-            {!isNative && <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />}
+            <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
             <main
                 className={`min-h-screen transition-all duration-300 ${
                     isNative

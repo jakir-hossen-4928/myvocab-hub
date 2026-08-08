@@ -133,24 +133,24 @@ export default function ArabicVocabularies() {
       </Helmet>
 
       {/* Header */}
-      <div className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white px-4 pt-8 pb-16">
+      <div className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white px-4 pt-6 pb-10 sm:pt-8 sm:pb-16">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="hidden sm:flex items-center justify-between gap-3 mb-4 flex-wrap">
             <Badge className="bg-white/20 text-white border-0 font-bold tracking-wider uppercase text-[10px]">
               🇸🇦 Saudi Dialect
             </Badge>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2" dir="rtl">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-1 sm:mb-2" dir="rtl">
             المفردات العربية
           </h1>
-          <p className="text-white/80 font-medium text-sm sm:text-base">
+          <p className="hidden sm:block text-white/80 font-medium text-sm sm:text-base">
             Learn Arabic (Saudi style) with daily words - transliteration & Bangla meaning
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 -mt-8">
+      <div className="max-w-5xl mx-auto px-4 -mt-6 sm:-mt-8">
         {/* Search & Category filter */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">

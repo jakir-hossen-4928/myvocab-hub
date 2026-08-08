@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import parse from "html-react-parser";
 import { LexkitViewer } from "@/components/LexkitViewer";
 import { useArabicResourcesSimple, useArabicResourceMutations } from "@/hooks/useArabicResources";
+import { dexieService } from "@/lib/dexieDb";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipe } from "@/hooks/useSwipe";
 import { Helmet } from "react-helmet-async";
@@ -95,6 +96,14 @@ export default function ArabicResourceDetail() {
             }
 
             try {
+                // Fallback: try the Dexie cache directly (works offline)
+                const cachedResource = await dexieService.getArabicResource(id);
+                if (cachedResource) {
+                    setResource(cachedResource);
+                    setLoading(false);
+                    return;
+                }
+
                 // First try to fetch as ID
                 const docRef = doc(db, "arabicResources", id);
                 const docSnap = await getDoc(docRef);

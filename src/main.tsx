@@ -1,7 +1,16 @@
 import { createRoot } from "react-dom/client";
+import { Capacitor } from "@capacitor/core";
 import App from "./App.tsx";
 import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Flag native (Capacitor) builds so CSS can disable WebView overscroll
+// bounce / pull-to-refresh app-wide without affecting the website.
+// `native-generic` targets all native WebViews, `native-android` is for
+// Android-specific adjustments.
+if (Capacitor.isNativePlatform()) {
+    document.documentElement.classList.add("native-generic", "native-android");
+}
 
 const queryClient = new QueryClient({
     defaultOptions: {

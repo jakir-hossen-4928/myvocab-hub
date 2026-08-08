@@ -33,11 +33,11 @@ export const MobileDrawer = ({ open, onOpenChange }: MobileDrawerProps) => {
             <NavLink
                 to={item.path}
                 onClick={() => onOpenChange(false)}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all active:scale-[0.98] group ${isHighlighted ? 'text-primary font-semibold' : 'text-muted-foreground hover:bg-primary/5 hover:text-primary'}`}
+                className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all active:scale-[0.98] group ${isHighlighted ? 'text-primary font-semibold' : 'text-muted-foreground hover:bg-primary/5 hover:text-primary'}`}
                 activeClassName="bg-primary/10 text-primary font-bold ring-1 ring-primary/10"
             >
-                <span className={`flex items-center justify-center h-10 w-10 rounded-full ${isHighlighted ? 'bg-primary/15' : 'bg-primary/5'}`}>
-                    <item.icon className="h-5 w-5" />
+                <span className={`flex items-center justify-center h-8 w-8 rounded-full ${isHighlighted ? 'bg-primary/15' : 'bg-primary/5'}`}>
+                    <item.icon className="h-4 w-4" />
                 </span>
                 <span className="text-[15px] font-medium tracking-tight">{item.label}</span>
                 {item.highlight && (
@@ -48,7 +48,7 @@ export const MobileDrawer = ({ open, onOpenChange }: MobileDrawerProps) => {
     };
 
     const SectionLabel = ({ label }: { label: string }) => (
-        <p className="px-4 pt-4 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+        <p className="px-4 pt-3 pb-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
             {label}
         </p>
     );
@@ -70,7 +70,7 @@ export const MobileDrawer = ({ open, onOpenChange }: MobileDrawerProps) => {
 
                 {/* Navigation Content */}
                 <ScrollArea className="flex-1">
-                    <div className="px-3 py-3 space-y-1">
+                    <div className="px-3 pt-2 pb-3 space-y-0">
                         <SectionLabel label="Core" />
                         {coreNavItems.map((item) => (
                             <NavItem key={item.path} item={item} />

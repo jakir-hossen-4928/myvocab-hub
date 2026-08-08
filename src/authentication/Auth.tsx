@@ -5,13 +5,15 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BookOpen, Sparkles, Smartphone, ArrowRight } from "lucide-react";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
+import { usePlatform } from "@/hooks/usePlatform";
 
 export default function Auth() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { isNative } = usePlatform();
 
     useEffect(() => {
         if (user) {
@@ -19,14 +21,36 @@ export default function Auth() {
         }
     }, [user, navigate]);
 
+    // Sign-in in native WebViews must use the redirect flow.
+    // Popup auth is not supported inside the Capacitor WebView, so on
+    // native we finalize any pending redirect-based sign-in on mount.
+    useEffect(() => {
+        if (!isNative) return;
+
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result?.user) {
+                    toast.success("Welcome back!");
+                    navigate("/home");
+                }
+            })
+            .catch((error: { message?: string }) => {
+                console.error("Redirect sign-in result error:", error.message || error);
+            });
+    }, [isNative, navigate]);
+
     const handleGoogleSignIn = async () => {
         try {
             const provider = new GoogleAuthProvider();
+            if (isNative) {
+                await signInWithRedirect(auth, provider);
+                return;
+            }
             await signInWithPopup(auth, provider);
             toast.success("Welcome back!");
             navigate("/home");
-        } catch (error: any) {
-            console.error("Sign in error:", error);
+        } catch (error: { message?: string }) {
+            console.error("Sign in error:", error.message || error);
             toast.error(error.message || "Failed to sign in.");
         }
     };

@@ -127,6 +127,65 @@ All colors MUST be HSL.
   }
 }
 
+/* ==========================================================================
+   NATIVE ANDROID (Capacitor WebView) OVERSCROLL FIX
+   Disables the WebView rubber-band / pull-to-refresh bounce that makes the
+   whole UI (including the fixed navbar & bottom bar) shake on pull gestures.
+   Scoped to .native-android (set on <html> in main.tsx) so the website
+   keeps its normal scroll behavior.
+   ========================================================================== */
+html.native-android,
+html.native-android body {
+  /* Kill the page-level rubber-band bounce and pull-to-refresh */
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+
+  /* Keep the app chrome non-scaling & stable */
+  -webkit-text-size-adjust: 100%;
+}
+
+html.native-android body {
+  /* Notes:
+     - We do NOT force height/overflow here: the app's virtualized lists
+       (react-virtualized WindowScroller, tanstack useWindowVirtualizer)
+       scroll the WINDOW, so body must remain the natural document scroller.
+     - overflow-x hidden only stops sideways bounce; vertical stays window-led. */
+  overflow-x: hidden;
+}
+
+/* Any inner scroll container (virtualized lists, modals, sheets) must
+   contain its own overscroll and NEVER propagate it to the page, so a
+   pull inside a list can't yank the fixed navbar/bottom bar. */
+html.native-android main,
+html.native-android [data-slot="scroll-area"],
+html.native-android div[data-radix-scroll-area-root],
+html.native-android [role="dialog"],
+html.native-android [role="sheet"],
+html.native-android [role="listbox"],
+html.native-android .react-virtualized-List,
+html.native-android .virtual-list {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Any element that is itself a scroll container (has auto/scroll overflow)
+   gets containment so bounce never chains up to the page. */
+html.native-android [style*="overflow"] {
+  overscroll-behavior: contain;
+}
+
+/* Guarantee the fixed chrome (top header, bottom nav) is always pinned to
+   the viewport and painted above all app content, and cannot shift during any
+   overscroll that slips through on older WebViews.
+   NOTE: we intentionally do NOT force `transform` here, because the bottom
+   nav relies on Tailwind's translate-y-* transform for its keyboard-hide. */
+html.native-android .fixed,
+html.native-android [class*="fixed"] {
+  position: fixed;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
 @layer utilities {
 
   /* Line clamp utilities for text truncation */

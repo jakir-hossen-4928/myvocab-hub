@@ -68,6 +68,14 @@ export interface ImageCache {
     timestamp: number;
 }
 
+// TTS audio cache for offline speech
+export interface TTSCache {
+    key: string;
+    blob: Blob;
+    contentType: string;
+    timestamp: number;
+}
+
 // Main Dexie Database
 export class VocabularyDatabase extends Dexie {
     // Tables
@@ -83,6 +91,7 @@ export class VocabularyDatabase extends Dexie {
     apiCache!: Table<ApiCache, string>;
     listeningTests!: Table<ListeningTest, string>;
     imageCache!: Table<ImageCache, string>;
+    ttsCache!: Table<TTSCache, string>;
 
     constructor() {
         super('VocabularyAppDB');
@@ -113,6 +122,22 @@ export class VocabularyDatabase extends Dexie {
             apiCache: 'id, timestamp',
             listeningTests: 'id, title',
             imageCache: 'url, timestamp'
+        });
+
+        this.version(8).stores({
+            vocabularies: 'id, english, bangla, partOfSpeech, createdAt, updatedAt, userId',
+            resources: 'id, title, createdAt, userId',
+            arabicVocabularies: 'id, arabic, transliteration, bangla, category, createdAt, updatedAt, userId',
+            arabicResources: 'id, title, slug, createdAt, userId',
+            chatSessions: 'id, vocabularyId, updatedAt',
+            favorites: 'id, addedAt',
+            flashcardProgress: 'id, lastReviewed, nextReviewDate',
+            syncMetadata: 'key, lastSyncedAt',
+            searchHistory: '++id, query, timestamp',
+            apiCache: 'id, timestamp',
+            listeningTests: 'id, title',
+            imageCache: 'url, timestamp',
+            ttsCache: 'key, timestamp'
         });
     }
 }
@@ -410,6 +435,15 @@ export const dexieService = {
         } catch (error) {
             console.error('Failed to get arabic resources from Dexie:', error);
             return [];
+        }
+    },
+
+    async getArabicResource(id: string): Promise<GrammarImage | undefined> {
+        try {
+            return await db.arabicResources.get(id);
+        } catch (error) {
+            console.error('Failed to get arabic resource from Dexie:', error);
+            return undefined;
         }
     },
 
@@ -874,6 +908,38 @@ export const dexieService = {
             });
         } catch (error) {
             console.error('Failed to cache image in Dexie:', error);
+        }
+    },
+
+    // ==================== TTS AUDIO CACHE ====================
+    async getTtsFromCache(key: string): Promise<{ blob: Blob; contentType: string } | undefined> {
+        try {
+            const entry = await db.ttsCache.get(key);
+            if (!entry) return undefined;
+
+            const oneYear = 365 * 24 * 60 * 60 * 1000;
+            if (Date.now() - entry.timestamp > oneYear) {
+                await db.ttsCache.delete(key);
+                return undefined;
+            }
+
+            return { blob: entry.blob, contentType: entry.contentType };
+        } catch (error) {
+            console.error('Failed to get TTS from Dexie cache:', error);
+            return undefined;
+        }
+    },
+
+    async saveTtsToCache(key: string, blob: Blob, contentType: string): Promise<void> {
+        try {
+            await db.ttsCache.put({
+                key,
+                blob,
+                contentType,
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            console.error('Failed to cache TTS audio in Dexie:', error);
         }
     }
 };

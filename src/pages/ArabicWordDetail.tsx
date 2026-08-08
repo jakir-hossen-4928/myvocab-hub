@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,7 @@ export default function ArabicWordDetail() {
 
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const [showSwipeHint, setShowSwipeHint] = useState(false);
-  const [shareRef, setShareRef] = useState<HTMLDivElement | null>(null);
+  const shareRef = useRef<HTMLDivElement | null>(null);
   const [itemToShare, setItemToShare] = useState<ArabicVocabulary | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -163,10 +163,10 @@ export default function ArabicWordDetail() {
 
     setTimeout(async () => {
       try {
-        if (!shareRef) throw new Error('Capture element not found');
+        if (!shareRef.current) throw new Error('Capture element not found');
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        const dataUrl = await toPng(shareRef, {
+        const dataUrl = await toPng(shareRef.current, {
           cacheBust: true,
           pixelRatio: 2,
           skipAutoScale: true,
@@ -500,7 +500,7 @@ export default function ArabicWordDetail() {
             backgroundColor: 'white'
           }}
         >
-          <div ref={setShareRef}>
+          <div ref={shareRef}>
             <ShareableArabicCard item={itemToShare} />
           </div>
         </div>
