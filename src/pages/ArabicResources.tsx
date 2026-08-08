@@ -42,7 +42,6 @@ import { stripMarkdown } from "@/utils/textCleaner";
 import { Helmet } from "react-helmet-async";
 import { CachedImage } from "@/components/CachedImage";
 import { ResourcePlaceholder } from "@/components/ResourcePlaceholder";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import "@/richtexteditor/styles.css";
 
 export default function ArabicResources() {
@@ -184,7 +183,6 @@ export default function ArabicResources() {
                 Practical Saudi Arabic guides with transliteration & Bangla meaning
               </p>
             </div>
-            <LanguageSwitcher compact />
           </div>
         </div>
       </motion.header>

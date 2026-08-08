@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, Volume2, X } from "lucide-react";
 import { useArabicVocabularies } from "@/hooks/useArabicVocabularies";
 import { SAUDI_CATEGORIES, getCategoryById } from "@/data/saudiCategories";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { speakText } from "@/services/ttsService";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -72,7 +71,6 @@ export default function ArabicVocabularies() {
             <Badge className="bg-white/20 text-white border-0 font-bold tracking-wider uppercase text-[10px]">
               🇸🇦 Saudi Dialect
             </Badge>
-            <LanguageSwitcher compact />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2" dir="rtl">
             المفردات العربية
