@@ -25,13 +25,11 @@ import { Progress } from "@/components/ui/progress";
 import { dexieService } from "@/lib/dexieDb";
 import { toast } from "sonner";
 import { speakText } from "@/services/ttsService";
-import { useAuth } from "@/contexts/AuthContext";
 
 import { FlashcardProgress } from "@/lib/dexieDb";
 
 export default function Flashcards() {
     const navigate = useNavigate();
-    const { user } = useAuth();
     const { data: vocabularies = [], isLoading } = useVocabularies();
     const [cards, setCards] = useState<Vocabulary[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);

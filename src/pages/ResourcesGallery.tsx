@@ -165,9 +165,9 @@ export default function ResourcesGallery() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Helmet>
-        <title>Educational Resources | Ai Vocab</title>
+        <title>Educational Resources | MyVocab Hub</title>
         <meta name="description" content="Browse our collection of English learning materials, grammar guides, and vocabulary resources." />
-        <meta property="og:title" content="Educational Resources | Ai Vocab" />
+        <meta property="og:title" content="Educational Resources | MyVocab Hub" />
         <meta property="og:description" content="High-quality English learning materials and resources." />
       </Helmet>
       <motion.header

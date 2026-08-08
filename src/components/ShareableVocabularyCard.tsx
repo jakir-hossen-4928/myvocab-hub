@@ -37,7 +37,7 @@ export const ShareableVocabularyCard = React.forwardRef<HTMLDivElement, Shareabl
                     <div className="bg-blue-500 p-2 rounded-xl">
                         <Sparkles className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-xl font-bold text-blue-500 tracking-tight">Ai Vocab</span>
+                    <span className="text-xl font-bold text-blue-500 tracking-tight">MyVocab Hub</span>
                 </div>
 
                 <div className="flex flex-col items-center justify-center text-center space-y-2 mb-8">
@@ -117,7 +117,7 @@ export const ShareableVocabularyCard = React.forwardRef<HTMLDivElement, Shareabl
                     <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50/50 rounded-full border border-blue-100/50">
                         <Globe className="w-3 h-3 text-blue-400" />
                         <span className="text-[10px] items-center text-gray-400 font-medium tracking-wide">
-                            Learn more at <span className="text-blue-500 font-bold ml-1">ai-vocabulary-coach.netlify.app</span>
+                            Learn more at <span className="text-blue-500 font-bold ml-1">myvocab-hub.netlify.app</span>
                         </span>
                     </div>
 

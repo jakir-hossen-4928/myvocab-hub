@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useVocabularies } from '@/hooks/useVocabularies';
 
-const DEFAULT_TITLE = 'AI Vocab';
+const DEFAULT_TITLE = 'MyVocab Hub';
 
 const ROUTE_TITLES: Record<string, string> = {
     '/': 'Welcome',
@@ -31,6 +31,12 @@ const ROUTE_TITLES: Record<string, string> = {
     '/admin/resources/add': 'Create Resource',
     '/ielts-listing': 'IELTS',
     '/admin/ielts-listening-builder': 'IELTS Builder',
+    '/arabic-vocabularies': 'Arabic Vocabulary',
+    '/arabic-resources': 'Arabic Resources',
+    '/admin/arabic-resources': 'Arabic Resources Admin',
+    '/admin/arabic-resources/add': 'Create Arabic Resource',
+    '/control-center': 'Control Center',
+    '/study': 'Study',
 };
 
 export const usePageTitle = () => {
@@ -92,6 +98,30 @@ export const usePageTitle = () => {
                 const chatMatch = matchPath('/chat/:id', path);
                 if (chatMatch) {
                     title = 'Chat with Word';
+                }
+
+                // Arabic Word Detail
+                const arabicVocabMatch = matchPath('/arabic-vocabularies/:id', path);
+                if (arabicVocabMatch) {
+                    title = 'Arabic Word';
+                }
+
+                // Arabic Resource Detail
+                const arabicResourceMatch = matchPath('/arabic-resources/:id', path);
+                if (arabicResourceMatch) {
+                    title = 'Arabic Resource';
+                }
+
+                // Arabic Word Edit
+                const arabicEditMatch = matchPath('/admin/arabic-vocabularies/edit/:id', path);
+                if (arabicEditMatch) {
+                    title = 'Edit Arabic Word';
+                }
+
+                // Arabic Resource Edit
+                const arabicResourceEditMatch = matchPath('/admin/arabic-resources/edit/:id', path);
+                if (arabicResourceEditMatch) {
+                    title = 'Edit Arabic Resource';
                 }
             }
 

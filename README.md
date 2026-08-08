@@ -1,4 +1,4 @@
-# AI Vocabulary Builder 🎓
+# MyVocab Hub 🎓
 
 A sophisticated, AI-powered vocabulary learning platform designed to help Bengali speakers master English vocabulary. Built specifically for IELTS Band 7+ preparation, combining modern web technologies with advanced AI to create a personalized learning experience.
 

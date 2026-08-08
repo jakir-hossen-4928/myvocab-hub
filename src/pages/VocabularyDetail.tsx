@@ -139,7 +139,7 @@ export default function VocabularyDetail() {
     if (vocab) {
       localStorage.setItem('last_viewed_vocab_id', vocab.id);
       metaService.setMeta({
-        title: `${vocab.english} (${vocab.bangla}) | Ai Vocab`,
+        title: `${vocab.english} (${vocab.bangla}) | MyVocab Hub`,
         description: vocab.explanation,
         type: 'website'
       });

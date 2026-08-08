@@ -46,7 +46,7 @@ export default function Vocabularies() {
   const debouncedSearch = useDebounce(searchQuery, 150);
   const { data: vocabData = [], isLoading, refresh, isRefetching } = useVocabularies(debouncedSearch);
   const { deleteVocabulary, updateVocabulary } = useVocabularyMutations();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const navType = useNavigationType();
@@ -116,13 +116,9 @@ export default function Vocabularies() {
   // Close details modal on mobile/tablet resize
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-    } else {
-      const savedLastViewedId = localStorage.getItem('last_viewed_vocab_id');
-      setLastViewedId(savedLastViewedId);
-    }
-  }, [user, navigate]);
+    const savedLastViewedId = localStorage.getItem('last_viewed_vocab_id');
+    setLastViewedId(savedLastViewedId);
+  }, []);
 
   // Sync selectedVocab with updated data from hook
   useEffect(() => {

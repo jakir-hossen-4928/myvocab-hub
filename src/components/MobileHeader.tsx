@@ -6,7 +6,7 @@ interface MobileHeaderProps {
     title?: string;
 }
 
-export const MobileHeader = ({ onMenuClick, title = "Ai Vocab" }: MobileHeaderProps) => {
+export const MobileHeader = ({ onMenuClick, title = "MyVocab Hub" }: MobileHeaderProps) => {
     return (
         <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-primary to-blue-600 text-white shadow-lg">
             <div className="flex items-center gap-3 px-3 py-2.5">

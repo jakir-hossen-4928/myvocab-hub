@@ -47,7 +47,7 @@ export default function Auth() {
 
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-                        AI Vocab
+                        MyVocab Hub
                     </h1>
                     <p className="text-slate-200">
                         Master language with smart tools.
@@ -111,7 +111,7 @@ export default function Auth() {
                 </Card>
 
                 <p className="mt-10 text-center text-xs text-slate-400 uppercase tracking-widest font-medium">
-                    &copy; {new Date().getFullYear()} AI Vocab
+                    &copy; {new Date().getFullYear()} MyVocab Hub
                 </p>
             </div>
         </div>

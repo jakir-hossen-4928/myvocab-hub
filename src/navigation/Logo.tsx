@@ -11,7 +11,7 @@ export const Logo = ({ onOpenChange, isCollapsed = false }: LogoProps) => {
     const navigate = useNavigate();
     const { haptic } = useNative();
     const [isHovered, setIsHovered] = useState(false);
-    const [displayText, setDisplayText] = useState("Ai Vocab");
+    const [displayText, setDisplayText] = useState("MyVocab Hub");
     const targetText = "IELTS";
 
     useEffect(() => {
@@ -27,7 +27,7 @@ export const Logo = ({ onOpenChange, isCollapsed = false }: LogoProps) => {
                 }
             }, 50);
         } else {
-            setDisplayText("Ai Vocab");
+            setDisplayText("MyVocab Hub");
         }
         return () => clearInterval(interval);
     }, [isHovered]);
@@ -49,7 +49,7 @@ export const Logo = ({ onOpenChange, isCollapsed = false }: LogoProps) => {
                 {isHovered ? "I" : "A"}
                 {/* Tooltip for collapsed state */}
                 <div className="absolute left-full ml-3 px-2 py-1 bg-popover text-popover-foreground text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border shadow-sm">
-                    {isHovered ? "IELTS" : "Ai Vocab"}
+                    {isHovered ? "IELTS" : "MyVocab Hub"}
                 </div>
             </div>
         );

@@ -175,7 +175,7 @@ export default function ResourceDetail() {
         <div className="min-h-screen bg-background pb-20 overflow-x-hidden" {...containerProps}>
             {grammar && (
                 <Helmet>
-                    <title>{grammar.title} | Ai Vocab Resources</title>
+                    <title>{grammar.title} | MyVocab Hub Resources</title>
                     <meta name="description" content={grammar.description?.substring(0, 160).replace(/[#*`]/g, '') || 'Educational resource'} />
                     <meta property="og:title" content={grammar.title} />
                     <meta property="og:description" content={grammar.description?.substring(0, 160).replace(/[#*`]/g, '') || 'Educational resource'} />

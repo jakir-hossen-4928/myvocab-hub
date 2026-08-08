@@ -8,7 +8,7 @@ interface MobileHeaderProps {
     title?: string;
 }
 
-export const MobileHeader = ({ onMenuClick, title = "Ai Vocab" }: MobileHeaderProps) => {
+export const MobileHeader = ({ onMenuClick, title = "MyVocab Hub" }: MobileHeaderProps) => {
     const navigate = useNavigate();
     const { haptic } = useNative();
 

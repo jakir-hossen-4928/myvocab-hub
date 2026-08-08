@@ -58,7 +58,7 @@ export const metaService = {
 
     resetToDefault() {
         this.setMeta({
-            title: 'Ai Vocab',
+            title: 'MyVocab Hub',
             description: 'Master English vocabulary with AI-powered coaching',
             image: '/og_image.png'
         });

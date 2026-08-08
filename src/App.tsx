@@ -44,6 +44,17 @@ const ListeningList = lazy(() => import("./pages/ListeningList"));
 const ListeningDetail = lazy(() => import("./pages/ListeningDetail"));
 const ListeningBuilder = lazy(() => import("./admin/ListeningBuilder"));
 
+// Arabic pages
+const ArabicVocabularies = lazy(() => import("./pages/ArabicVocabularies"));
+const ArabicWordDetail = lazy(() => import("./pages/ArabicWordDetail"));
+const ArabicResources = lazy(() => import("./pages/ArabicResources"));
+const ArabicResourceDetail = lazy(() => import("./pages/ArabicResourceDetail"));
+const AddArabicVocabulary = lazy(() => import("./admin/AddArabicVocabulary"));
+const AddArabicResource = lazy(() => import("./admin/AddArabicResource"));
+const AdminArabicResourceGallery = lazy(() => import("./admin/AdminArabicResourceGallery"));
+const Study = lazy(() => import("./pages/Study"));
+const ControlCenter = lazy(() => import("./pages/ControlCenter"));
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,8 +68,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
-  const { user, loading } = useAuth();
-
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -68,35 +77,43 @@ const AppRoutes = () => {
       <Routes>
         {/* Auth routes */}
         <Route element={<LandingLayout />}>
-          <Route path="/" element={<Navigate to={!loading && user ? "/home" : "/auth"} replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/download" element={<DownloadPage />} />
         </Route>
 
-        {/* App Pages - With Sidebar/BottomNav (for authenticated users) */}
+        {/* App Pages - With Sidebar/BottomNav */}
         <Route element={<Layout />}>
-          {/* Home dashboard with navigation bars */}
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          {/* Home dashboard - public */}
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          {/* Publicly accessible pages but within Layout */}
+
+          {/* Publicly accessible content - no sign-in needed to read */}
+          <Route path="/vocabularies" element={<Vocabularies />} />
+          <Route path="/vocabularies/:id" element={<VocabularyDetail />} />
           <Route path="/resources" element={<ResourcesGallery />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
+          <Route path="/dictionary" element={<OnlineDictionary />} />
+          <Route path="/flashcards" element={<Flashcards />} />
+          <Route path="/meet-developer" element={<MeetDeveloper />} />
+          <Route path="/ielts-listing" element={<ListeningList />} />
+          <Route path="/ielts-listing/:id" element={<ListeningDetail />} />
+          <Route path="/print-vocabularies" element={<PrintVocabulary />} />
+          <Route path="/arabic-vocabularies" element={<ArabicVocabularies />} />
+          <Route path="/arabic-vocabularies/:id" element={<ArabicWordDetail />} />
+          <Route path="/arabic-resources" element={<ArabicResources />} />
+          <Route path="/arabic-resources/:slug" element={<ArabicResourceDetail />} />
 
-          {/* Protected Routes */}
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/vocabularies" element={<ProtectedRoute><Vocabularies /></ProtectedRoute>} />
-          <Route path="/vocabularies/:id" element={<ProtectedRoute><VocabularyDetail /></ProtectedRoute>} />
+          {/* Study - public */}
+          <Route path="/study" element={<Study />} />
+
+          {/* Account-only pages */}
+          <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+
+          {/* Admin only */}
           <Route path="/vocabularies/add" element={<AdminRoute><AddVocabulary /></AdminRoute>} />
           <Route path="/vocabularies/bulk-add" element={<AdminRoute><BulkAddVocabulary /></AdminRoute>} />
           <Route path="/vocabularies/edit/:id" element={<AdminRoute><AddVocabulary /></AdminRoute>} />
-          <Route path="/dictionary" element={<ProtectedRoute><OnlineDictionary /></ProtectedRoute>} />
-          <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
-          <Route path="/meet-developer" element={<ProtectedRoute><MeetDeveloper /></ProtectedRoute>} />
-
-          {/* Listening Routes (Protected) */}
-          <Route path="/ielts-listing" element={<ProtectedRoute><ListeningList /></ProtectedRoute>} />
-          <Route path="/ielts-listing/:id" element={<ProtectedRoute><ListeningDetail /></ProtectedRoute>} />
 
           {/* Redirects from old grammar routes to new resources routes */}
           <Route path="/grammar" element={<Navigate to="/resources" replace />} />
@@ -112,12 +129,20 @@ const AppRoutes = () => {
           <Route path="/admin/analytics" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/admin/ai-enhancement-studio" element={<AdminRoute><AiEnhancementStudio /></AdminRoute>} />
-          <Route path="/print-vocabularies" element={<ProtectedRoute><PrintVocabulary /></ProtectedRoute>} />
           <Route path="/admin/duplicates" element={<AdminRoute><DuplicateManager /></AdminRoute>} />
 
           <Route path="/admin/ielts-listening-builder" element={<AdminRoute><ListeningBuilder /></AdminRoute>} />
 
-          <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+          {/* Control Center Hub - requires sign-in */}
+          <Route path="/control-center" element={<ProtectedRoute><ControlCenter /></ProtectedRoute>} />
+
+          {/* Arabic admin routes */}
+          <Route path="/admin/arabic-vocabularies/add" element={<AdminRoute><AddArabicVocabulary /></AdminRoute>} />
+          <Route path="/admin/arabic-vocabularies/edit/:id" element={<AdminRoute><AddArabicVocabulary /></AdminRoute>} />
+          <Route path="/admin/arabic-resources" element={<AdminRoute><AdminArabicResourceGallery /></AdminRoute>} />
+          <Route path="/admin/arabic-resources/add" element={<AdminRoute><AddArabicResource /></AdminRoute>} />
+          <Route path="/admin/arabic-resources/edit/:id" element={<AdminRoute><AddArabicResource /></AdminRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

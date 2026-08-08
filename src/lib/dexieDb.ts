@@ -1,6 +1,7 @@
 import Dexie, { Table } from 'dexie';
 import { Vocabulary } from '@/types/vocabulary';
 import { GrammarImage } from '@/types/grammar';
+import { ArabicVocabulary } from '@/types/arabicVocabulary';
 import { searchService } from '@/services/searchService';
 import { ListeningTest } from '@/data/listeningData';
 
@@ -72,6 +73,8 @@ export class VocabularyDatabase extends Dexie {
     // Tables
     vocabularies!: Table<Vocabulary, string>;
     resources!: Table<GrammarImage, string>;
+    arabicVocabularies!: Table<ArabicVocabulary, string>;
+    arabicResources!: Table<GrammarImage, string>;
     chatSessions!: Table<ChatSession, string>;
     favorites!: Table<Favorite, string>;
     flashcardProgress!: Table<FlashcardProgress, string>;
@@ -87,6 +90,21 @@ export class VocabularyDatabase extends Dexie {
         this.version(6).stores({
             vocabularies: 'id, english, bangla, partOfSpeech, createdAt, updatedAt, userId',
             resources: 'id, title, createdAt, userId',
+            chatSessions: 'id, vocabularyId, updatedAt',
+            favorites: 'id, addedAt',
+            flashcardProgress: 'id, lastReviewed, nextReviewDate',
+            syncMetadata: 'key, lastSyncedAt',
+            searchHistory: '++id, query, timestamp',
+            apiCache: 'id, timestamp',
+            listeningTests: 'id, title',
+            imageCache: 'url, timestamp'
+        });
+
+        this.version(7).stores({
+            vocabularies: 'id, english, bangla, partOfSpeech, createdAt, updatedAt, userId',
+            resources: 'id, title, createdAt, userId',
+            arabicVocabularies: 'id, arabic, transliteration, bangla, category, createdAt, updatedAt, userId',
+            arabicResources: 'id, title, slug, createdAt, userId',
             chatSessions: 'id, vocabularyId, updatedAt',
             favorites: 'id, addedAt',
             flashcardProgress: 'id, lastReviewed, nextReviewDate',
@@ -325,6 +343,105 @@ export const dexieService = {
             await db.resources.clear();
         } catch (error) {
             console.error('Failed to clear resources from Dexie:', error);
+        }
+    },
+
+    // ==================== ARABIC VOCABULARIES ====================
+    async getAllArabicVocabularies(): Promise<ArabicVocabulary[]> {
+        try {
+            return await db.arabicVocabularies
+                .orderBy('createdAt')
+                .reverse()
+                .toArray();
+        } catch (error) {
+            console.error('Failed to get arabic vocabularies from Dexie:', error);
+            return [];
+        }
+    },
+
+    async getArabicVocabulary(id: string): Promise<ArabicVocabulary | undefined> {
+        try {
+            return await db.arabicVocabularies.get(id);
+        } catch (error) {
+            console.error('Failed to get arabic vocabulary from Dexie:', error);
+            return undefined;
+        }
+    },
+
+    async addArabicVocabulary(vocab: ArabicVocabulary): Promise<void> {
+        try {
+            await db.arabicVocabularies.put(vocab);
+        } catch (error) {
+            console.error('Failed to add arabic vocabulary to Dexie:', error);
+        }
+    },
+
+    async addArabicVocabularies(vocabs: ArabicVocabulary[]): Promise<void> {
+        try {
+            await db.arabicVocabularies.bulkPut(vocabs);
+        } catch (error) {
+            console.error('Failed to add arabic vocabularies to Dexie:', error);
+        }
+    },
+
+    async deleteArabicVocabulary(id: string): Promise<void> {
+        try {
+            await db.arabicVocabularies.delete(id);
+        } catch (error) {
+            console.error('Failed to delete arabic vocabulary from Dexie:', error);
+        }
+    },
+
+    async clearArabicVocabularies(): Promise<void> {
+        try {
+            await db.arabicVocabularies.clear();
+        } catch (error) {
+            console.error('Failed to clear arabic vocabularies from Dexie:', error);
+        }
+    },
+
+    // ==================== ARABIC RESOURCES ====================
+    async getAllArabicResources(): Promise<GrammarImage[]> {
+        try {
+            return await db.arabicResources
+                .orderBy('createdAt')
+                .reverse()
+                .toArray();
+        } catch (error) {
+            console.error('Failed to get arabic resources from Dexie:', error);
+            return [];
+        }
+    },
+
+    async addArabicResource(resource: GrammarImage): Promise<void> {
+        try {
+            await db.arabicResources.put(resource);
+        } catch (error) {
+            console.error('Failed to add arabic resource to Dexie:', error);
+        }
+    },
+
+    async addArabicResources(resources: GrammarImage[]): Promise<void> {
+        try {
+            await db.arabicResources.bulkPut(resources);
+        } catch (error) {
+            console.error('Failed to add arabic resources to Dexie:', error);
+        }
+    },
+
+    async deleteArabicResource(id: string): Promise<void> {
+        try {
+            await db.arabicResources.delete(id);
+        } catch (error) {
+            console.error('Failed to delete arabic resource from Dexie:', error);
+        }
+    },
+
+    async clearArabicResources(): Promise<void> {
+        try {
+            await db.arabicResources.clear();
+        } catch (error) {
+            console.error('Failed to clear arabic resources from Dexie:', error);
         }
     },
 

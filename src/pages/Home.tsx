@@ -136,9 +136,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Ai Vocab | Master English Vocabulary</title>
+        <title>MyVocab Hub | Master English Vocabulary</title>
         <meta name="description" content="Enhance your English vocabulary with AI-powered tools, personalized learning, and interactive resources." />
-        <meta property="og:title" content="Ai Vocab | Master English Vocabulary" />
+        <meta property="og:title" content="MyVocab Hub | Master English Vocabulary" />
         <meta property="og:description" content="Personalized AI vocabulary builder and English learning platform." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
