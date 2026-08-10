@@ -28,7 +28,6 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import PARTS_OF_SPEECH from "@/data/partOfSpeech.json";
 import { useVocabularyShare } from "@/hooks/useVocabularyShare";
-import { ShareableVocabularyCard } from "./ShareableVocabularyCard";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface VocabularyDetailsModalProps {
@@ -77,7 +76,7 @@ export function VocabularyDetailsModal({
     const [isEditing, setIsEditing] = useState(false);
     const [editedVocab, setEditedVocab] = useState<Vocabulary | null>(null);
     const { updateVocabulary } = useVocabularyMutations();
-    const { shareAsImage, shareRef, itemToShare, isSharing: isSharingImage } = useVocabularyShare();
+    const { shareAsImage, isItemSharing } = useVocabularyShare();
 
     useEffect(() => {
         if (vocabulary) {
@@ -107,6 +106,8 @@ export function VocabularyDetailsModal({
     }, [open, hasNext, hasPrevious, onNext, onPrevious, isEditing]);
 
     if (!vocabulary) return null;
+
+    const isSharingImage = isItemSharing(vocabulary.id);
 
     const handleEditClick = () => {
         setIsEditing(true);
@@ -624,24 +625,7 @@ export function VocabularyDetailsModal({
                         )}
                     </div>
                 </ScrollArea>
-                {/* Hidden view for sharing as image */}
-                {itemToShare && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            left: '0',
-                            top: '0',
-                            width: '450px',
-                            opacity: '0',
-                            pointerEvents: 'none',
-                            zIndex: 1000,
-                            overflow: 'hidden',
-                            backgroundColor: 'white'
-                        }}
-                    >
-                        <ShareableVocabularyCard ref={shareRef} item={itemToShare} />
-                    </div>
-                )}
+                {/* Hidden view for sharing as image - MOVED: Now handled globally by GlobalShareProxy */}
             </DialogContent>
         </Dialog>
     );

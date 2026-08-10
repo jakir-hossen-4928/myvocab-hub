@@ -39,6 +39,14 @@ export interface FlashcardProgress {
     nextReviewDate: number;
     interval: number;
     streak: number;
+    // Study tracking metadata
+    flashcardCount: number;      // times reviewed via flashcards
+    quizCount: number;           // questions answered via quiz
+    quizCorrect: number;         // quiz answers correct
+    correctStreak: number;       // consecutive correct answers
+    maxCorrectStreak: number;    // best consecutive streak achieved
+    lastResult: 'correct' | 'incorrect' | null;
+    confidence: number;          // 0..5 mastery confidence level
 }
 
 // Sync metadata to track last sync times

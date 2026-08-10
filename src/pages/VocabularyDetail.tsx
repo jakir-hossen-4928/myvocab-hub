@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Volume2, Trash2, Heart, Loader2, Edit, Share2 } from "lucide-react";
+import { VocabularyDetailSkeleton } from "@/components/skeletons";
 import { speakText } from "@/services/ttsService";
 import { useVocabularies, useVocabularyMutations } from "@/hooks/useVocabularies";
 import { useFavorites } from "@/hooks/useFavorites";
 import { confirmAction, showSuccessToast, showErrorToast } from "@/utils/sweetAlert";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVocabularyShare } from "@/hooks/useVocabularyShare";
-import { ShareableVocabularyCard } from "@/components/ShareableVocabularyCard";
 import { useNative } from "@/hooks/useNative";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -61,7 +61,8 @@ export default function VocabularyDetail() {
   const isMobile = useIsMobile();
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const { haptic } = useNative();
-  const { shareAsImage, shareRef, itemToShare, isSharing: isSharingImage } = useVocabularyShare();
+  const { shareAsImage, isItemSharing } = useVocabularyShare();
+  const isSharingImage = isItemSharing(id ?? '');
   const [showSwipeHint, setShowSwipeHint] = useState(false);
 
   // Analytics tracking
@@ -183,11 +184,7 @@ export default function VocabularyDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <VocabularyDetailSkeleton />;
   }
 
   if (!vocab) return null;
@@ -498,24 +495,7 @@ export default function VocabularyDetail() {
         )
       }
 
-      {/* Hidden view for sharing as image */}
-      {itemToShare && (
-        <div
-          style={{
-            position: 'fixed',
-            left: '0',
-            top: '0',
-            width: '450px',
-            opacity: '0',
-            pointerEvents: 'none',
-            zIndex: -1,
-            overflow: 'hidden',
-            backgroundColor: 'white'
-          }}
-        >
-          <ShareableVocabularyCard ref={shareRef} item={itemToShare} />
-        </div>
-      )}
+      {/* Hidden view for sharing as image - MOVED: Now handled globally by GlobalShareProxy */}
     </div >
   );
 }

@@ -21,13 +21,16 @@ const queryClient = new QueryClient({
     },
 });
 import { HelmetProvider } from "react-helmet-async";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 createRoot(document.getElementById("root")!).render(
-    <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-            <App />
-        </QueryClientProvider>
-    </HelmetProvider>
+    <ErrorBoundary>
+        <HelmetProvider>
+            <QueryClientProvider client={queryClient}>
+                <App />
+            </QueryClientProvider>
+        </HelmetProvider>
+    </ErrorBoundary>
 );
 
 // Disable source code viewing in production

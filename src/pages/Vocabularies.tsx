@@ -7,7 +7,7 @@ import { VocabCard } from "@/components/VocabCard";
 import { Plus, Search, Filter, X, RefreshCw, Globe, Mic, History as HistoryIcon } from "lucide-react";
 import { useVocabularies, useVocabularyMutations } from "@/hooks/useVocabularies";
 import { useFavorites } from "@/hooks/useFavorites";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { VocabGridSkeleton } from "@/components/skeletons";
 import { searchDictionaryAPI, convertDictionaryToVocabulary } from "@/services/dictionaryApiService";
 import {
   Sheet,
@@ -37,6 +37,8 @@ import { ViewPreferenceDialog } from "@/components/ViewPreferenceDialog";
 import { toast } from "sonner";
 import { useVoiceSearch } from "@/hooks/useVoiceSearch";
 import { useViewPreference } from "@/hooks/useViewPreference";
+import { usePlatform } from "@/hooks/usePlatform";
+import { useNative } from "@/hooks/useNative";
 import { vocabularyService } from "@/services/vocabularyService";
 import { List, AutoSizer, WindowScroller, CellMeasurer, CellMeasurerCache } from "react-virtualized";
 
@@ -76,6 +78,8 @@ export default function Vocabularies() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [lastViewedId, setLastViewedId] = useState<string | null>(null);
   const [isResuming, setIsResuming] = useState(false);
+  const { isNative } = usePlatform();
+  const { haptic } = useNative();
 
   // Voice search
   const { isListening, startListening, language, toggleLanguage, interimTranscript } = useVoiceSearch((transcript) => {
@@ -124,7 +128,7 @@ export default function Vocabularies() {
   useEffect(() => {
     if (selectedVocab && vocabData.length > 0) {
       const updatedVocab = vocabData.find(v => v.id === selectedVocab.id);
-      if (updatedVocab && updatedVocab !== selectedVocab) {
+      if (updatedVocab && JSON.stringify(updatedVocab) !== JSON.stringify(selectedVocab)) {
         setSelectedVocab(updatedVocab);
       }
     }
@@ -347,18 +351,20 @@ export default function Vocabularies() {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-3 sm:px-4 pt-3 sm:pt-6 pb-4 sm:pb-6 shadow-md flex-shrink-0 z-50"
+        className={isNative
+          ? "sticky top-[calc(52px+var(--safe-area-top))] z-40 bg-background/95 backdrop-blur border-b border-border/50 shadow-none px-3 pt-2 pb-2 flex-shrink-0"
+          : "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-3 sm:px-4 pt-3 sm:pt-6 pb-4 sm:pb-6 shadow-md flex-shrink-0 z-50"}
       >
         <div className="max-w-7xl mx-auto w-full">
-          <div className="flex items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+          <div className={isNative ? "flex items-center justify-between mb-2 gap-2" : "flex items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2"}>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold mb-0.5 sm:mb-1 truncate">Vocabularies</h1>
-              <p className="text-primary-foreground/80 text-xs sm:text-sm h-4 sm:h-5 flex items-center">
+              <h1 className={isNative ? "text-base font-bold leading-tight text-foreground" : "text-lg sm:text-2xl font-bold mb-0.5 sm:mb-1 truncate"}>Vocabularies</h1>
+              <p className={isNative ? "text-[11px] text-muted-foreground leading-tight flex items-center" : "text-primary-foreground/80 text-xs sm:text-sm h-4 sm:h-5 flex items-center"}>
                 <span className="truncate">
                   {filteredVocabs.length + onlineResults.length} words found
                 </span>
                 {onlineResults.length > 0 && (
-                  <span className="ml-2 inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] sm:text-xs shrink-0">
+                  <span className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs shrink-0 ${isNative ? "bg-primary/10 text-primary" : "bg-white/20"}`}>
                     <Globe className="h-3 w-3" />
                     {onlineResults.length} online
                   </span>
@@ -368,11 +374,13 @@ export default function Vocabularies() {
             <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
               {/* Refresh Button */}
               <Button
-                onClick={handleRefresh}
+                onClick={() => { if (isNative) haptic('light'); handleRefresh(); }}
                 disabled={isRefetching}
                 size="sm"
                 variant="secondary"
-                className="bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 shadow-sm h-8 sm:h-9 w-8 sm:w-9 p-0"
+                className={`shadow-sm p-0 ${isNative
+                  ? "bg-secondary text-secondary-foreground border border-border/60 rounded-xl h-10 min-h-[44px] w-10 min-w-[44px]"
+                  : "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 h-8 sm:h-9 w-8 sm:w-9"}`}
                 title="Refresh vocabularies"
               >
                 <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
@@ -382,7 +390,9 @@ export default function Vocabularies() {
                   onClick={handleResume}
                   size="sm"
                   variant="secondary"
-                  className="bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 shadow-sm text-xs h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1"
+                  className={`shadow-sm text-xs flex items-center gap-1 ${isNative
+                    ? "bg-secondary text-secondary-foreground border border-border/60 rounded-xl h-10 min-h-[44px] px-3"
+                    : "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 h-8 sm:h-9 px-2 sm:px-3"}`}
                 >
                   <HistoryIcon className="h-3.5 w-3.5" />
                   <span className="hidden xs:inline">Resume</span>
@@ -393,7 +403,9 @@ export default function Vocabularies() {
                   <Button
                     onClick={() => navigate("/vocabularies/add")}
                     size="sm"
-                    className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-sm text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
+                    className={`shadow-sm text-xs sm:text-sm ${isNative
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-10 min-h-[44px] px-3"
+                      : "bg-primary-foreground text-primary hover:bg-primary-foreground/90 h-8 sm:h-9 px-2 sm:px-3"}`}
                   >
                     <Plus className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
                     <span className="hidden sm:inline">Add</span>
@@ -402,7 +414,9 @@ export default function Vocabularies() {
                     onClick={() => navigate("/vocabularies/bulk-add")}
                     size="sm"
                     variant="secondary"
-                    className="bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 shadow-sm text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 hidden xs:flex"
+                    className={`shadow-sm text-xs sm:text-sm hidden xs:flex ${isNative
+                      ? "bg-secondary text-secondary-foreground border border-border/60 rounded-xl h-10 min-h-[44px] px-3"
+                      : "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 h-8 sm:h-9 px-2 sm:px-3"}`}
                   >
                     <span className="hidden sm:inline">Bulk Upload</span>
                     <span className="sm:hidden">Bulk</span>
@@ -419,11 +433,13 @@ export default function Vocabularies() {
                 e.preventDefault();
                 (e.currentTarget.querySelector('input') as HTMLInputElement)?.blur();
               }}
-              className="relative flex-1 group bg-white shadow-lg rounded-xl flex items-center transition-all duration-200 focus-within:ring-2 focus-within:ring-white/20"
+              className={isNative
+                ? "relative flex-1 group bg-card border border-border/60 shadow-sm rounded-xl flex items-center transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/30"
+                : "relative flex-1 group bg-white shadow-lg rounded-xl flex items-center transition-all duration-200 focus-within:ring-2 focus-within:ring-white/20"}
             >
               <Search className="absolute left-3 sm:left-4 h-4 w-4 text-foreground/80 transition-colors group-focus-within:text-primary" />
               <Input
-                className="pl-9 sm:pl-10 h-10 sm:h-12 border-0 bg-transparent focus-visible:ring-0 text-foreground text-sm sm:text-base pr-24 sm:pr-32 placeholder:text-muted-foreground"
+                className={`pl-9 sm:pl-10 border-0 bg-transparent focus-visible:ring-0 text-foreground text-sm sm:text-base pr-24 sm:pr-32 placeholder:text-muted-foreground ${isNative ? "h-11" : "h-10 sm:h-12"}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -528,113 +544,105 @@ export default function Vocabularies() {
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="secondary" className="bg-white shadow-lg text-foreground hover:bg-slate-50 border-0 relative h-10 sm:h-12 w-10 sm:w-12 p-0 flex-shrink-0">
+                <Button variant="secondary" onClick={() => { if (isNative) haptic('light'); }} className={isNative
+                  ? "bg-background text-foreground border border-border/60 shadow-sm rounded-xl relative h-10 sm:h-12 w-10 sm:w-12 p-0 flex-shrink-0"
+                  : "bg-white shadow-lg text-foreground hover:bg-slate-50 border-0 relative h-10 sm:h-12 w-10 sm:w-12 p-0 flex-shrink-0"}>
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   {activeFiltersCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-red-500 rounded-full border-2 border-primary text-[10px] sm:text-xs flex items-center justify-center font-bold text-white">{activeFiltersCount}</span>
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-[20px] h-[85vh] sm:h-[80vh] px-4 sm:px-6">
-                <SheetHeader className="mb-4 sm:mb-6">
-                  <SheetTitle className="text-lg sm:text-xl">Filter & Sort</SheetTitle>
-                  <SheetDescription className="text-xs sm:text-sm">
-                    Customize how you view your vocabulary list.
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div className="space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(85vh-180px)] sm:max-h-[calc(80vh-180px)]">
-                  {/* Sort Order */}
-                  <div className="space-y-2">
-                    <Label className="text-sm sm:text-base">Sort By</Label>
-                    <Select value={sortOrder} onValueChange={setSortOrder}>
-                      <SelectTrigger className="h-10 sm:h-11">
-                        <SelectValue placeholder="Select sort order" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">Newest First</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                        <SelectItem value="a-z">A-Z (English)</SelectItem>
-                        <SelectItem value="z-a">Z-A (English)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Part of Speech */}
-                  <div className="space-y-2">
-                    <Label className="text-sm sm:text-base">Part of Speech</Label>
-                    <Select value={selectedPos} onValueChange={setSelectedPos}>
-                      <SelectTrigger className="h-10 sm:h-11">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="noun">Noun</SelectItem>
-                        <SelectItem value="verb">Verb</SelectItem>
-                        <SelectItem value="adjective">Adjective</SelectItem>
-                        <SelectItem value="adverb">Adverb</SelectItem>
-                        <SelectItem value="preposition">Preposition</SelectItem>
-                        <SelectItem value="conjunction">Conjunction</SelectItem>
-                        <SelectItem value="pronoun">Pronoun</SelectItem>
-                        <SelectItem value="interjection">Interjection</SelectItem>
-                        <SelectItem value="phrase">Phrase</SelectItem>
-                        <SelectItem value="idiom">Idiom</SelectItem>
-                        <SelectItem value="phrasal verb">Phrasal Verb</SelectItem>
-                        <SelectItem value="collocation">Collocation</SelectItem>
-                        <SelectItem value="linking phrase">Linking Phrase</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Favorites Toggle */}
-                  <div className="flex items-center justify-between p-3 sm:p-4 border rounded-lg">
-                    <div className="space-y-0.5 flex-1 pr-2">
-                      <Label className="text-sm sm:text-base">Favorites Only</Label>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        Show only words you've marked as favorite
-                      </p>
+              {!isNative ? (
+                <SheetContent side="top" hideClose className="max-w-4xl mx-auto rounded-b-3xl mt-3 p-5 sm:p-6 shadow-2xl">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <SheetHeader className="p-0">
+                        <SheetTitle className="text-lg">Filter & Sort</SheetTitle>
+                        <SheetDescription>Customize how you view your vocabulary list. Changes apply instantly.</SheetDescription>
+                      </SheetHeader>
                     </div>
-                    <Switch
-                      checked={showFavorites}
-                      onCheckedChange={setShowFavorites}
-                    />
+                    <SheetClose asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </SheetClose>
                   </div>
 
-                  {/* View Preference Reset */}
-                  <div className="flex items-center justify-between p-3 sm:p-4 border rounded-lg">
-                    <div className="space-y-0.5 flex-1 pr-2">
-                      <Label className="text-sm sm:text-base">View Preference</Label>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        Current: {preference ? (preference === "modal" ? "Modal View" : "Details Page") : "Not Set"}
-                      </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Sort By</Label>
+                      <Select value={sortOrder} onValueChange={setSortOrder}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select sort order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="oldest">Oldest First</SelectItem>
+                          <SelectItem value="a-z">A-Z (English)</SelectItem>
+                          <SelectItem value="z-a">Z-A (English)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        clearPreference();
-                        toast.success("View preference reset");
-                      }}
-                    >
-                      Reset
-                    </Button>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm">Part of Speech</Label>
+                      <Select value={selectedPos} onValueChange={setSelectedPos}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="noun">Noun</SelectItem>
+                          <SelectItem value="verb">Verb</SelectItem>
+                          <SelectItem value="adjective">Adjective</SelectItem>
+                          <SelectItem value="adverb">Adverb</SelectItem>
+                          <SelectItem value="preposition">Preposition</SelectItem>
+                          <SelectItem value="conjunction">Conjunction</SelectItem>
+                          <SelectItem value="pronoun">Pronoun</SelectItem>
+                          <SelectItem value="interjection">Interjection</SelectItem>
+                          <SelectItem value="phrase">Phrase</SelectItem>
+                          <SelectItem value="idiom">Idiom</SelectItem>
+                          <SelectItem value="phrasal verb">Phrasal Verb</SelectItem>
+                          <SelectItem value="collocation">Collocation</SelectItem>
+                          <SelectItem value="linking phrase">Linking Phrase</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 sm:p-4 border rounded-xl">
+                      <div className="space-y-0.5 flex-1 pr-2">
+                        <Label className="text-sm">Favorites Only</Label>
+                        <p className="text-xs text-muted-foreground">Only words you've marked as favorite</p>
+                      </div>
+                      <Switch checked={showFavorites} onCheckedChange={setShowFavorites} />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 sm:p-4 border rounded-xl">
+                      <div className="space-y-0.5 flex-1 pr-2">
+                        <Label className="text-sm">View Preference</Label>
+                        <p className="text-xs text-muted-foreground">Current: {preference ? (preference === "modal" ? "Modal View" : "Details Page") : "Not Set"}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => { clearPreference(); toast.success("View preference reset"); }}>
+                        Reset
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Active Filters Summary */}
                   {activeFiltersCount > 0 && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-4 mt-4 border-t">
                       {selectedPos !== "all" && (
-                        <Badge variant="secondary" onClick={() => setSelectedPos("all")} className="cursor-pointer text-xs sm:text-sm">
+                        <Badge variant="secondary" onClick={() => setSelectedPos("all")} className="cursor-pointer">
                           Type: {selectedPos} <X className="ml-1 h-3 w-3" />
                         </Badge>
                       )}
                       {sortOrder !== "newest" && (
-                        <Badge variant="secondary" onClick={() => setSortOrder("newest")} className="cursor-pointer text-xs sm:text-sm">
+                        <Badge variant="secondary" onClick={() => setSortOrder("newest")} className="cursor-pointer">
                           Sort: {sortOrder} <X className="ml-1 h-3 w-3" />
                         </Badge>
                       )}
                       {showFavorites && (
-                        <Badge variant="secondary" onClick={() => setShowFavorites(false)} className="cursor-pointer text-xs sm:text-sm">
+                        <Badge variant="secondary" onClick={() => setShowFavorites(false)} className="cursor-pointer">
                           Favorites Only <X className="ml-1 h-3 w-3" />
                         </Badge>
                       )}
@@ -643,14 +651,143 @@ export default function Vocabularies() {
                       </Button>
                     </div>
                   )}
-                </div>
 
-                <SheetFooter className="mt-4 sm:mt-8">
-                  <SheetClose asChild>
-                    <Button className="w-full h-10 sm:h-11 text-sm sm:text-base">Show {filteredVocabs.length} Results</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
+                  <SheetFooter className="mt-4 border-t pt-4">
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
+                    <SheetClose asChild>
+                      <Button>Show {filteredVocabs.length} Results</Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </SheetContent>
+              ) : (
+                <SheetContent
+                  side="bottom"
+                  hideClose
+                  className="flex max-h-[85dvh] flex-col gap-0 rounded-t-2xl p-0"
+                >
+                  <div className="flex justify-center pt-3 pb-1">
+                    <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  <SheetHeader className="px-4 pt-1 pb-3">
+                    <SheetTitle className="text-left text-lg">Filter & Sort</SheetTitle>
+                  </SheetHeader>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-6">
+                    {/* Sort Order */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Sort By</Label>
+                      <Select value={sortOrder} onValueChange={setSortOrder}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select sort order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="oldest">Oldest First</SelectItem>
+                          <SelectItem value="a-z">A-Z (English)</SelectItem>
+                          <SelectItem value="z-a">Z-A (English)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Part of Speech */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Part of Speech</Label>
+                      <Select value={selectedPos} onValueChange={setSelectedPos}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="noun">Noun</SelectItem>
+                          <SelectItem value="verb">Verb</SelectItem>
+                          <SelectItem value="adjective">Adjective</SelectItem>
+                          <SelectItem value="adverb">Adverb</SelectItem>
+                          <SelectItem value="preposition">Preposition</SelectItem>
+                          <SelectItem value="conjunction">Conjunction</SelectItem>
+                          <SelectItem value="pronoun">Pronoun</SelectItem>
+                          <SelectItem value="interjection">Interjection</SelectItem>
+                          <SelectItem value="phrase">Phrase</SelectItem>
+                          <SelectItem value="idiom">Idiom</SelectItem>
+                          <SelectItem value="phrasal verb">Phrasal Verb</SelectItem>
+                          <SelectItem value="collocation">Collocation</SelectItem>
+                          <SelectItem value="linking phrase">Linking Phrase</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Favorites Toggle */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="space-y-0.5 flex-1 pr-2">
+                        <Label className="text-sm">Favorites Only</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Show only words you've marked as favorite
+                        </p>
+                      </div>
+                      <Switch
+                        checked={showFavorites}
+                        onCheckedChange={setShowFavorites}
+                      />
+                    </div>
+
+                    {/* View Preference Reset */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="space-y-0.5 flex-1 pr-2">
+                        <Label className="text-sm">View Preference</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Current: {preference ? (preference === "modal" ? "Modal View" : "Details Page") : "Not Set"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          clearPreference();
+                          toast.success("View preference reset");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+
+                    {/* Active Filters Summary */}
+                    {activeFiltersCount > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-2">
+                        {selectedPos !== "all" && (
+                          <Badge variant="secondary" onClick={() => setSelectedPos("all")} className="cursor-pointer">
+                            Type: {selectedPos} <X className="ml-1 h-3 w-3" />
+                          </Badge>
+                        )}
+                        {sortOrder !== "newest" && (
+                          <Badge variant="secondary" onClick={() => setSortOrder("newest")} className="cursor-pointer">
+                            Sort: {sortOrder} <X className="ml-1 h-3 w-3" />
+                          </Badge>
+                        )}
+                        {showFavorites && (
+                          <Badge variant="secondary" onClick={() => setShowFavorites(false)} className="cursor-pointer">
+                            Favorites Only <X className="ml-1 h-3 w-3" />
+                          </Badge>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs text-muted-foreground">
+                          Clear All
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <SheetFooter className="flex-row gap-2 border-t px-4 py-3 pb-[calc(0.75rem+var(--safe-area-bottom))] flex-shrink-0">
+                    <Button variant="outline" onClick={clearFilters} className="flex-1 h-12 min-h-[44px]">
+                      Clear Filters
+                    </Button>
+                    <SheetClose asChild>
+                      <Button className="flex-1 h-12 min-h-[44px]">
+                        Show {filteredVocabs.length} Results
+                      </Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </SheetContent>
+              )}
             </Sheet>
           </div>
         </div>
@@ -660,20 +797,11 @@ export default function Vocabularies() {
         className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8"
       >
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <LoadingSpinner />
-            <p className="text-sm font-medium text-muted-foreground animate-pulse">Gathering your vocabulary...</p>
-          </div>
+          <VocabGridSkeleton count={6} />
         ) : isWorkerFiltering && filteredVocabs.length === 0 && onlineResults.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <LoadingSpinner />
-            <p className="text-sm font-medium text-muted-foreground">Searching locally...</p>
-          </div>
+          <VocabGridSkeleton count={6} />
         ) : isSearchingOnline ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <LoadingSpinner />
-            <p className="text-sm font-medium text-muted-foreground">Consulting online dictionary...</p>
-          </div>
+          <VocabGridSkeleton count={6} />
         ) : filteredVocabs.length === 0 && onlineResults.length === 0 ? (
           <div className="text-center py-20 px-4 max-w-md mx-auto">
             <div className="bg-primary/5 rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6">

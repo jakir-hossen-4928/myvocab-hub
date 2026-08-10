@@ -12,6 +12,10 @@ lerna-debug.log*
 .env
 .env.*
 .env.local
+
+# Release signing secrets (backup copies - never commit)
+backups/
+
 node_modules
 dist
 dist-ssr

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Sparkles, Zap, Loader2, X, Globe, Mic, Languages, History as HistoryIcon } from "lucide-react";
+import { Search, Sparkles, Zap, X, Globe, Mic, Languages, History as HistoryIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { vocabularyService } from "@/services/vocabularyService";
 import { History } from "lucide-react";
 import { metaService } from "@/services/metaService";
 import { Helmet } from "react-helmet-async";
+import { VocabGridSkeleton } from "@/components/skeletons";
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -309,10 +310,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-12 gap-3"
+              className="pt-2"
             >
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <p className="text-sm text-muted-foreground animate-pulse">Consulting database...</p>
+              <VocabGridSkeleton count={6} />
             </motion.div>
           ) : (
             <motion.div

@@ -1,12 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { RouteSkeleton } from "@/components/skeletons";
 
 export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     const { user, isAdmin, loading } = useAuth();
 
     if (loading) {
-        return <LoadingSpinner />;
+        return <RouteSkeleton />;
     }
 
     if (!user) {

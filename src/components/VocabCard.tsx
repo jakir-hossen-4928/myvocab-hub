@@ -10,6 +10,7 @@ import React, { memo, useState } from "react";
 import { translateText } from "@/services/googleTranslateService";
 import { toast } from "sonner";
 import { useNative } from "@/hooks/useNative";
+import { usePlatform } from "@/hooks/usePlatform";
 import { useVocabularyShare } from "@/hooks/useVocabularyShare";
 import { ShareableVocabularyCard } from "./ShareableVocabularyCard";
 
@@ -57,6 +58,7 @@ export const VocabCard = memo(({
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedWord, setTranslatedWord] = useState<string>("");
   const { haptic } = useNative();
+  const { isNative } = usePlatform();
   const { shareAsImage, shareRef, itemToShare, isItemSharing } = useVocabularyShare();
   const isSharingImage = isItemSharing(vocab.id);
 
@@ -265,18 +267,20 @@ export const VocabCard = memo(({
 
               {!vocab.isOnline && (
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleFavorite(vocab.id);
-                    }}
-                    className={`h-9 w-9 rounded-full transition-colors ${isFavorite ? "text-red-500 bg-red-50 dark:bg-red-500/10" : "text-muted-foreground hover:text-red-500 hover:bg-red-50"}`}
-                    aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
-                  </Button>
+                  {!isNative && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(vocab.id);
+                      }}
+                      className={`h-9 w-9 rounded-full transition-colors ${isFavorite ? "text-red-500 bg-red-50 dark:bg-red-500/10" : "text-muted-foreground hover:text-red-500 hover:bg-red-50"}`}
+                      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                    </Button>
+                  )}
 
                   {isAdmin && onDelete && (
                     <Button

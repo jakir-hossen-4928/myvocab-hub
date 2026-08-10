@@ -11,12 +11,15 @@ export const GlobalShareProxy: React.FC = () => {
         <div
             style={{
                 position: 'fixed',
-                left: '-9999px', // Position off-screen instead of opacity 0 for safety with some browsers
                 top: '0',
+                left: '0',
+                opacity: 0,
+                pointerEvents: 'none',
                 width: '450px',
                 zIndex: -1,
                 overflow: 'hidden',
-                backgroundColor: 'white'
+                backgroundColor: 'white',
+                visibility: 'visible',
             }}
         >
             <ShareableVocabularyCard ref={shareRef} item={itemToShare} />

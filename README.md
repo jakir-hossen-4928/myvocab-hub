@@ -75,8 +75,47 @@ The same codebase runs as a responsive website (Netlify) AND a native Android ap
 | `npm run cap:build:android` | Sync + compile the **debug APK** (`android/app/build/outputs/apk/debug/app-debug.apk`) |
 | `npm run cap:open:android` | Opens the project in Android Studio |
 | `npm run cap:assets` | Regenerates app icons/splash from `resources/` |
+| `npm run cap:build:release` | Sync + compile the **signed release APK** using the release keystore |
 
-> For a **release APK** (signed), open `android/` in Android Studio → Build → Generate Signed App Bundle / APK.
+> Debug builds (`app-debug.apk`) are auto-signed with the local debug key. For distribution, ship the **release APK**.
+
+### 🔐 Release Signing (Keystore)
+
+The release APK is signed with a dedicated keystore so users can update without re-installing.
+
+| Item | Value |
+| --- | --- |
+| Keystore file | `android/app/myvocabhub-release.keystore` (never committed) |
+| Alias | `myvocabhub` |
+| Password | stored in `android/keystore.properties` (never committed) |
+| Validity | 10,000 days (≈ 27 years, until Dec 2053) |
+| Key algo | RSA 2048 |
+
+**Signing fingerprints** (register these in [Firebase Console](https://console.firebase.google.com) → Project settings → your Android app → *Add fingerprint*) — required for Google Sign-In to work in production:
+
+```
+SHA1:   8B:02:93:9A:1E:BD:1F:96:0C:3A:84:5E:C1:30:34:DF:A7:24:48:54
+SHA256: 02:DA:ED:74:CF:3E:8D:F5:67:01:C6:D8:5C:94:8A:24:BA:99:6D:60:78:2F:36:76:3F:EF:25:05:F1:70:03:6C
+```
+
+> ⚠️ **Back up `android/app/myvocabhub-release.keystore` and `android/keystore.properties` somewhere safe (offline).** If you lose them, you can never sign another update for this app and users must re-install from scratch. Passwords are random and cannot be recovered.
+
+To recreate/regenerate the keystore from scratch:
+
+```powershell
+& "C:\Program Files\Java\jdk-21\bin\keytool.exe" -genkeypair -v `
+  -keystore android\app\myvocabhub-release.keystore -alias myvocabhub `
+  -keyalg RSA -keysize 2048 -validity 10000 `
+  -storepass "CHANGE_ME" -keypass "CHANGE_ME" `
+  -dname "CN=MyVocab Hub, OU=Studio, O=MyVocab, L=Dhaka, ST=Dhaka, C=BD"
+```
+
+Then view fingerprints:
+
+```powershell
+& "C:\Program Files\Java\jdk-21\bin\keytool.exe" -list -v `
+  -keystore android\app\myvocabhub-release.keystore -storepass "CHANGE_ME"
+```
 
 ### ⚠️ Release Checklist (IMPORTANT — do EVERY time you ship a new APK)
 1. **Bump the version** in ALL THREE places:

@@ -6,16 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft, ArrowRight, RotateCcw, Flame, CheckCircle2, XCircle,
-  Sparkles, Volume2, Languages, Trophy, BookOpen
+  Sparkles, Volume2, Languages, Trophy, BookOpen, GraduationCap
 } from "lucide-react";
 import { useVocabularies } from "@/hooks/useVocabularies";
 import { useArabicVocabularies } from "@/hooks/useArabicVocabularies";
 import { speakText } from "@/services/ttsService";
 import { Helmet } from "react-helmet-async";
 import { cn } from "@/lib/utils";
-
-type Mode = "flashcards" | "quiz";
-type LanguageMode = "english" | "arabic";
+import { StudySkeleton } from "@/components/skeletons";
+import { studyTrackingService, StudyMode, LanguageMode } from "@/services/studyTrackingService";
+import type { FlashcardProgress } from "@/lib/dexieDb";
 
 interface FlashcardItem {
   id: string;
@@ -82,7 +82,7 @@ const saveProgress = (state: ProgressState) => {
 export default function Study() {
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState<Mode>("flashcards");
+  const [mode, setMode] = useState<StudyMode>("flashcards");
   const [languageMode, setLanguageMode] = useState<LanguageMode>("english");
   const [streak, setStreak] = useState<StoredStreak>(loadStreak);
   const [progress, setProgress] = useState<ProgressState>(loadProgress);
@@ -90,9 +90,32 @@ export default function Study() {
   const { data: englishWords = [], isLoading: loadingEnglish } = useVocabularies();
   const { data: arabicWords = [], isLoading: loadingArabic } = useArabicVocabularies();
 
+  // Per-word tracking records (Dexie)
+  const [records, setRecords] = useState<Map<string, FlashcardProgress>>(new Map());
+  const [recordsLoaded, setRecordsLoaded] = useState(false);
+
+  // Flashcard session (resumable)
+  const [fcQueue, setFcQueue] = useState<FlashcardItem[]>([]);
+  const [fcCurrent, setFcCurrent] = useState(0);
+
   useEffect(() => {
-    const s = recordStreak();
-    setStreak(s);
+    recordStreak();
+  }, []);
+
+  useEffect(() => {
+    setStreak(loadStreak());
+  }, [streak.count]);
+
+  useEffect(() => {
+    let cancelled = false;
+    studyTrackingService.loadAll().then((map) => {
+      if (cancelled) return;
+      setRecords(map);
+      setRecordsLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const cards = useMemo<FlashcardItem[]>(() => {
@@ -115,7 +138,31 @@ export default function Study() {
 
   const isLoading = loadingEnglish || loadingArabic;
 
-  const markReviewed = (id: string, wasCorrect: boolean) => {
+  // Build a resumable flashcard order whenever the card set or records change
+  useEffect(() => {
+    if (!recordsLoaded || cards.length === 0) return;
+
+    const byId = new Map(cards.map(c => [c.id, c]));
+    const session = studyTrackingService.loadSession("flashcards", languageMode);
+
+    if (session && session.queue.every(id => byId.has(id))) {
+      const ordered = session.queue
+        .map(id => byId.get(id)!)
+        .filter(Boolean);
+      setFcQueue(ordered);
+      setFcCurrent(Math.min(Math.max(0, session.index), ordered.length - 1));
+    } else {
+      const ordered = studyTrackingService
+        .buildQueue(cards, records)
+        .map(id => byId.get(id)!)
+        .filter(Boolean);
+      setFcQueue(ordered);
+      setFcCurrent(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- records intentionally excluded: rebuilding on every review resets resume position
+  }, [recordsLoaded, cards, languageMode]);
+
+  const markReviewedDaily = (id: string, wasCorrect: boolean) => {
     setProgress((prev) => {
       const reviewed = prev.reviewed.includes(id) ? prev.reviewed : [...prev.reviewed, id];
       const counts = { ...prev.counts, [id]: (prev.counts[id] || 0) + 1 };
@@ -129,20 +176,53 @@ export default function Study() {
     });
   };
 
+  const handleRecordReview = (id: string, mode: StudyMode, wasCorrect: boolean) => {
+    markReviewedDaily(id, wasCorrect);
+    studyTrackingService.recordReview(id, mode, wasCorrect, languageMode).then(rec => {
+      setRecords(prev => {
+        const next = new Map(prev);
+        next.set(id, rec);
+        return next;
+      });
+    });
+  };
+
+  const handleFlashcardNext = (id: string, wasCorrect: boolean) => {
+    handleRecordReview(id, "flashcards", wasCorrect);
+    const current = fcQueue.length > 0 ? fcCurrent % fcQueue.length : 0;
+    const nextIndex = (current + 1) % Math.max(1, fcQueue.length);
+    setFcCurrent(nextIndex);
+    studyTrackingService.saveSession(
+      "flashcards",
+      languageMode,
+      nextIndex,
+      fcQueue.map(c => c.id)
+    );
+  };
+
+  const handleBeforeQuizLeave = (ids: string[], index: number) => {
+    studyTrackingService.saveSession("quiz", languageMode, index, ids);
+  };
+
   const reviewedToday = progress.reviewed.length;
-  const cardsStudiedTotal = Object.keys(progress.counts).length;
-  const accuracy = useMemo(() => {
-    const total = Object.values(progress.correct).reduce((a, b) => a + b, 0);
-    const reviewedCount = Object.values(progress.counts).reduce((a, b) => a + b, 0);
-    return reviewedCount === 0 ? 0 : Math.round((total / reviewedCount) * 100);
-  }, [progress]);
+
+  const overallStats = useMemo(() => {
+    let correct = 0;
+    let total = 0;
+    let mastered = 0;
+    records.forEach(r => {
+      total += r.reviewCount;
+      correct += r.correctCount;
+      if (r.confidence >= 4) mastered++;
+    });
+    return {
+      accuracy: total === 0 ? 0 : Math.round((correct / total) * 100),
+      mastered,
+    };
+  }, [records]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground animate-pulse">
-        Loading study material...
-      </div>
-    );
+    return <StudySkeleton />;
   }
 
   if (cards.length === 0) {
@@ -244,7 +324,7 @@ export default function Study() {
 
         {/* Streak + Stats */}
         <Card className="p-5 mb-6 rounded-2xl border-border/60">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Flame className="h-5 w-5 text-orange-500" />
@@ -252,7 +332,7 @@ export default function Study() {
               <p className="text-2xl font-black">{streak.count}</p>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Day Streak</p>
             </div>
-            <div className="text-center border-l border-r border-border/60">
+            <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               </div>
@@ -261,9 +341,16 @@ export default function Study() {
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
+                <GraduationCap className="h-5 w-5 text-blue-500" />
+              </div>
+              <p className="text-2xl font-black">{overallStats.mastered}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Mastered</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
                 <Trophy className="h-5 w-5 text-amber-500" />
               </div>
-              <p className="text-2xl font-black">{accountAccuracy()}%</p>
+              <p className="text-2xl font-black">{overallStats.accuracy}%</p>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Accuracy</p>
             </div>
           </div>
@@ -281,15 +368,17 @@ export default function Study() {
         {/* Main study area */}
         {mode === "flashcards" ? (
           <FlashcardDeck
-            cards={cards}
+            cards={fcQueue}
+            current={fcCurrent}
             languageMode={languageMode}
-            onReview={markReviewed}
+            onReview={handleFlashcardNext}
           />
         ) : (
           <QuizPanel
             cards={cards}
             languageMode={languageMode}
-            onReview={markReviewed}
+            onReview={(id, correct) => handleRecordReview(id, "quiz", correct)}
+            onSessionChange={handleBeforeQuizLeave}
           />
         )}
       </div>
@@ -297,32 +386,29 @@ export default function Study() {
   );
 }
 
-const accountAccuracy = () => {
-  const progress = loadProgress();
-  const total = Object.values(progress.counts).reduce((a, b) => a + b, 0);
-  const correct = Object.values(progress.correct).reduce((a, b) => a + b, 0);
-  return total === 0 ? 0 : Math.round((correct / total) * 100);
-};
-
 const FlashcardDeck = ({
   cards,
+  current,
   languageMode,
   onReview,
 }: {
   cards: FlashcardItem[];
+  current: number;
   languageMode: LanguageMode;
   onReview: (id: string, wasCorrect: boolean) => void;
 }) => {
-  const [current, setCurrent] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  if (cards.length === 0) return null;
-  const card = cards[current % cards.length];
+  if (cards.length === 0) {
+    return (
+      <Card className="p-10 text-center rounded-3xl">
+        <p className="text-lg font-bold mb-2">No cards ready yet</p>
+        <p className="text-sm text-muted-foreground">Loading your study queue…</p>
+      </Card>
+    );
+  }
 
-  const next = () => {
-    setFlipped(false);
-    setCurrent((prev) => (prev + 1) % cards.length);
-  };
+  const card = cards[current % cards.length];
 
   const targetLabel = languageMode === "arabic" ? "العربية" : "English";
 
@@ -338,7 +424,7 @@ const FlashcardDeck = ({
           {!flipped ? (
             <>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                Bangla · Word {current + 1} / {cards.length}
+                Bangla · Card {(current % cards.length) + 1} / {cards.length}
               </p>
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">
                 বাংলা — বলুন / write it
@@ -382,10 +468,10 @@ const FlashcardDeck = ({
           <Volume2 className="h-5 w-5" />
         </Button>
         <div className="flex-1" />
-        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, true); next(); }}>
+        <Button variant="outline" size="lg" onClick={() => onReview(card.id, true)}>
           <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" /> Got It
         </Button>
-        <Button variant="outline" size="lg" onClick={() => { onReview(card.id, false); next(); }}>
+        <Button variant="outline" size="lg" onClick={() => onReview(card.id, false)}>
           <XCircle className="h-4 w-4 mr-2 text-rose-500" /> Again
         </Button>
       </div>
@@ -397,15 +483,26 @@ const QuizPanel = ({
   cards,
   languageMode,
   onReview,
+  onSessionChange,
 }: {
   cards: FlashcardItem[];
   languageMode: LanguageMode;
   onReview: (id: string, wasCorrect: boolean) => void;
+  onSessionChange: (ids: string[], index: number) => void;
 }) => {
-  const [questionSet, setQuestionSet] = useState<FlashcardItem[]>(() =>
-    shuffle([...cards]).slice(0, 10)
-  );
-  const [index, setIndex] = useState(0);
+  const [questionSet, setQuestionSet] = useState<FlashcardItem[]>(() => {
+    const session = studyTrackingService.loadSession("quiz", languageMode);
+    if (session && session.queue.every(id => cards.some(c => c.id === id))) {
+      const byId = new Map(cards.map(c => [c.id, c]));
+      const ordered = session.queue.map(id => byId.get(id)!).filter(Boolean);
+      if (ordered.length > 0) return ordered;
+    }
+    return shuffle([...cards]).slice(0, 10);
+  });
+  const [index, setIndex] = useState(() => {
+    const session = studyTrackingService.loadSession("quiz", languageMode);
+    return session ? Math.min(Math.max(0, session.index), Math.max(0, session.queue.length - 1)) : 0;
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
@@ -423,12 +520,17 @@ const QuizPanel = ({
     return [...set].sort(() => Math.random() - 0.5);
   }, [q, cards]);
 
+  const clearSession = () => {
+    studyTrackingService.clearSession("quiz", languageMode);
+  };
+
   const restart = () => {
     setQuestionSet(shuffle([...cards]).slice(0, 10));
     setIndex(0);
     setSelected(null);
     setScore(0);
     setDone(false);
+    clearSession();
   };
 
   if (cards.length < 4) {
@@ -459,6 +561,17 @@ const QuizPanel = ({
     );
   }
 
+  if (!q) {
+    return (
+      <Card className="p-10 text-center rounded-3xl">
+        <p className="text-sm text-muted-foreground">Preparing your quiz…</p>
+        <Button size="lg" className="mt-4" onClick={restart}>
+          <RotateCcw className="h-4 w-4 mr-2" /> Restart
+        </Button>
+      </Card>
+    );
+  }
+
   const isForeign = q.isArabic;
 
   const pick = (option: string) => {
@@ -470,8 +583,10 @@ const QuizPanel = ({
   };
 
   const nextQuestion = () => {
+    onSessionChange(questionSet.map(s => s.id), index + 1);
     if (index + 1 >= questionSet.length) {
       setDone(true);
+      clearSession();
     } else {
       setIndex((i) => i + 1);
       setSelected(null);

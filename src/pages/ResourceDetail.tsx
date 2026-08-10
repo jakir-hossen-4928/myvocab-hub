@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { GrammarImage } from "@/types/grammar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Calendar, Share2, Download } from "lucide-react";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ResourceDetailSkeleton } from "@/components/skeletons";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import { metaService } from "@/services/metaService";
 import { Helmet } from "react-helmet-async";
 import { CachedImage } from "@/components/CachedImage";
 import { useTrackResource } from "@/hooks/useAnalytics";
+import { shareText } from "@/services/nativeShareService";
+import { getShareUrl } from "@/utils/siteUrl";
 
 const SwipeHint = ({ onDismiss }: { onDismiss: () => void }) => (
     <motion.div
@@ -141,28 +143,18 @@ export default function ResourceDetail() {
     // Meta tags are now handles by react-helmet-async in the render
 
     const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: grammar?.title,
-                    text: `Check out this resource: ${grammar?.title}`,
-                    url: window.location.href,
-                });
-            } catch (error) {
-                // Ignore share errors
-            }
-        } else {
-            navigator.clipboard.writeText(window.location.href);
+        const result = await shareText(
+            grammar?.title || 'MyVocab Hub',
+            `Check out this resource: ${grammar?.title}`,
+            getShareUrl(window.location.pathname)
+        );
+        if (result.copied) {
             toast.success("Link copied to clipboard");
         }
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <LoadingSpinner />
-            </div>
-        );
+        return <ResourceDetailSkeleton />;
     }
 
     if (!grammar) return null;

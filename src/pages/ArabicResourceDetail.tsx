@@ -13,6 +13,8 @@ import parse from "html-react-parser";
 import { LexkitViewer } from "@/components/LexkitViewer";
 import { useArabicResourcesSimple, useArabicResourceMutations } from "@/hooks/useArabicResources";
 import { dexieService } from "@/lib/dexieDb";
+import { shareText } from "@/services/nativeShareService";
+import { getShareUrl } from "@/utils/siteUrl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipe } from "@/hooks/useSwipe";
 import { Helmet } from "react-helmet-async";
@@ -142,18 +144,12 @@ export default function ArabicResourceDetail() {
     }, [id, navigate, resources]);
 
     const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: resource?.title,
-                    text: `Check out this Arabic resource: ${resource?.title}`,
-                    url: window.location.href,
-                });
-            } catch (error) {
-                // Ignore share errors
-            }
-        } else {
-            navigator.clipboard.writeText(window.location.href);
+        const result = await shareText(
+            resource?.title || 'MyVocab Hub',
+            `Check out this Arabic resource: ${resource?.title}`,
+            getShareUrl(window.location.pathname)
+        );
+        if (result.copied) {
             toast.success("Link copied to clipboard");
         }
     };

@@ -18,7 +18,6 @@ import {
   X,
   ArrowRight
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
 import {
   Select,
@@ -42,11 +41,14 @@ import { List, AutoSizer, WindowScroller, CellMeasurer, CellMeasurerCache } from
 import { cleanTextContent, stripMarkdown } from "@/utils/textCleaner";
 import { Helmet } from "react-helmet-async";
 import { CachedImage } from "@/components/CachedImage";
+import { ResourceGridSkeleton } from "@/components/skeletons";
 import { ResourcePlaceholder } from "@/components/ResourcePlaceholder";
+import { usePlatform } from "@/hooks/usePlatform";
 import "@/richtexteditor/styles.css";
 
 export default function ResourcesGallery() {
   const navigate = useNavigate();
+  const { isNative } = usePlatform();
 
   // Use Dexie-backed resources with 15-minute cache
   const { data: images = [], isLoading: loading } = useResourcesSimple();
@@ -170,27 +172,31 @@ export default function ResourcesGallery() {
         <meta property="og:title" content="Educational Resources | MyVocab Hub" />
         <meta property="og:description" content="High-quality English learning materials and resources." />
       </Helmet>
-      <motion.header
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-4 pt-8 pb-12 rounded-b-[2rem] shadow-lg mb-6"
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">Resources Gallery</h1>
-              <p className="text-primary-foreground/80 text-sm">
-                Visual guides and articles for mastering English
-              </p>
+      {isNative ? (
+        <></>
+      ) : (
+        <motion.header
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-4 pt-8 pb-12 rounded-b-[2rem] shadow-lg mb-6"
+        >
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold mb-1">Resources Gallery</h1>
+                <p className="text-primary-foreground/80 text-sm">
+                  Visual guides and articles for mastering English
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Search and Filter Bar */}
-        <div className="flex gap-3 mb-6">
+        {/* Search and Filter Bar (sticky on native so it stays reachable while scrolling) */}
+        <div className={`flex gap-3 ${isNative ? 'sticky top-[calc(52px+var(--safe-area-top))] z-40 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-b border-border/50 mb-4' : 'mb-6'}`}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -235,19 +241,32 @@ export default function ResourcesGallery() {
                 <Filter className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[85vh]">
-              <SheetHeader>
-                <SheetTitle>Filter & Sort Resources</SheetTitle>
-                <SheetDescription>
-                  Customize how resources are displayed
-                </SheetDescription>
+            <SheetContent
+              side="bottom"
+              hideClose={isNative}
+              className={isNative
+                ? "flex max-h-[85dvh] flex-col gap-0 rounded-t-2xl p-0"
+                : "h-[85vh]"}
+            >
+              {isNative && (
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+                </div>
+              )}
+              <SheetHeader className={isNative ? "px-4 pt-1 pb-3" : ""}>
+                <SheetTitle className="text-left">Filter & Sort Resources</SheetTitle>
+                {!isNative && (
+                  <SheetDescription>
+                    Customize how resources are displayed
+                  </SheetDescription>
+                )}
               </SheetHeader>
-              <div className="py-6 space-y-6 overflow-y-auto max-h-[calc(85vh-180px)]">
+              <div className={isNative ? "flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-6" : "py-6 space-y-6 overflow-y-auto max-h-[calc(85vh-180px)]"}>
                 {/* Sort By */}
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Sort By</Label>
                   <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={isNative ? "h-11" : undefined}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,7 +299,7 @@ export default function ResourcesGallery() {
                     Date Range
                   </Label>
                   <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={isNative ? "h-11" : undefined}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -301,6 +320,7 @@ export default function ResourcesGallery() {
                       <Input
                         id="start-date"
                         type="date"
+                        className={isNative ? "h-11" : undefined}
                         value={customStartDate}
                         onChange={(e) => setCustomStartDate(e.target.value)}
                       />
@@ -310,6 +330,7 @@ export default function ResourcesGallery() {
                       <Input
                         id="end-date"
                         type="date"
+                        className={isNative ? "h-11" : undefined}
                         value={customEndDate}
                         onChange={(e) => setCustomEndDate(e.target.value)}
                       />
@@ -324,12 +345,12 @@ export default function ResourcesGallery() {
                   </p>
                 </div>
               </div>
-              <SheetFooter className="gap-2">
-                <Button variant="outline" onClick={clearFilters} className="flex-1">
+              <SheetFooter className={isNative ? "flex-row gap-2 border-t px-4 py-3 pb-[calc(0.75rem+var(--safe-area-bottom))] flex-shrink-0" : "gap-2"}>
+                <Button variant="outline" onClick={clearFilters} className="flex-1 h-12 min-h-[44px]">
                   Clear Filters
                 </Button>
                 <SheetClose asChild>
-                  <Button className="flex-1">Apply</Button>
+                  <Button className="flex-1 h-12 min-h-[44px]">Apply</Button>
                 </SheetClose>
               </SheetFooter>
             </SheetContent>
@@ -338,9 +359,7 @@ export default function ResourcesGallery() {
 
         <div className="pb-32 md:pb-8">
           {loading ? (
-            <div className="py-12 flex justify-center">
-              <LoadingSpinner />
-            </div>
+            <ResourceGridSkeleton count={6} />
           ) : filteredAndSortedImages.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}

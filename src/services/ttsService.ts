@@ -1,4 +1,8 @@
 import { dexieService } from "@/lib/dexieDb";
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
+import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = Capacitor.isNativePlatform();
 
 const PREFERRED_VOICE_KEY = 'tts_voice_preference';
 const PREFERRED_RATE_KEY = 'tts_rate_preference';
@@ -18,6 +22,10 @@ const detectLang = (text: string): string => {
 
 const isArabicVoice = (voice: SpeechSynthesisVoice) =>
   !!voice.lang && voice.lang.toLowerCase().startsWith('ar');
+
+// Map the detected script language to a full BCP-47 tag for the TTS engine
+const langToTag = (lang: string): string =>
+  lang === 'ar' ? 'ar-SA' : lang === 'bn' ? 'bn-BD' : 'en-US';
 
 const findVoice = (lang: string, preferredName: string | null): SpeechSynthesisVoice | null => {
   const prefix = lang.split('-')[0].toLowerCase();
@@ -50,6 +58,19 @@ const findVoice = (lang: string, preferredName: string | null): SpeechSynthesisV
 };
 
 export const loadVoices = (): Promise<SpeechSynthesisVoice[]> => {
+  if (isNativePlatform) {
+    return TextToSpeech.getSupportedVoices()
+      .then(({ voices }) => {
+        // Native TTS voices are structurally close to SpeechSynthesisVoice
+        voicesCache = voices as unknown as SpeechSynthesisVoice[];
+        return voicesCache;
+      })
+      .catch((error) => {
+        console.error('[ttsService] Failed to load native voices:', error);
+        return [];
+      });
+  }
+
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       resolve([]);
@@ -179,10 +200,32 @@ const hasWebSpeech = () =>
 export const speakText = async (text: string) => {
   if (typeof window === 'undefined') return;
 
+  const lang = detectLang(text);
+
+  if (isNativePlatform) {
+    try {
+      // Flush any ongoing utterance so rapid taps replay cleanly
+      await TextToSpeech.stop();
+
+      await TextToSpeech.speak({
+        text,
+        lang: langToTag(lang),
+        rate: getStoredRate(),
+        pitch: getStoredPitch(),
+        volume: 1.0,
+        category: 'ambient',
+        queueStrategy: 0, // 0 = Flush current utterance
+      });
+    } catch (error) {
+      console.error('[ttsService] Native TTS Error:', error);
+      // Fall back to the cache/audio path if the native engine fails
+      await speakViaAudio(text, lang);
+    }
+    return;
+  }
+
   // Cancel any ongoing speech
   if (hasWebSpeech()) window.speechSynthesis.cancel();
-
-  const lang = detectLang(text);
 
   // Harden: ensure voices are loaded (with a short grace period)
   if (voicesCache.length === 0 && hasWebSpeech()) {
@@ -238,6 +281,10 @@ export const speakText = async (text: string) => {
 };
 
 export const stopSpeaking = () => {
+  if (isNativePlatform) {
+    TextToSpeech.stop().catch((error) => console.error('[ttsService] Error stopping native TTS:', error));
+    return;
+  }
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }

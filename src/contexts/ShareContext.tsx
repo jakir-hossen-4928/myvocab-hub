@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useRef, useCallback } from 
 import { Vocabulary } from '@/types/vocabulary';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
+import { sharePng } from '@/services/nativeShareService';
+import { trackEvent as trackUTMEvent, getStoredUTMParams } from '@/utils/utmTracking';
 
 interface ShareContextType {
     shareAsImage: (item: Vocabulary) => Promise<void>;
@@ -12,28 +14,16 @@ interface ShareContextType {
 
 const ShareContext = createContext<ShareContextType | undefined>(undefined);
 
-// Import at component level to avoid circular dependency
-let trackEventFn: ((eventName: string, additionalData?: Record<string, any>) => void) | null = null;
-
 export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const shareRef = useRef<HTMLDivElement>(null);
     const [sharingId, setSharingId] = useState<string | null>(null);
     const [itemToShare, setItemToShare] = useState<Vocabulary | null>(null);
 
-    // Try to get UTM tracking function
-    try {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const { trackEvent } = require('@/contexts/UTMContext').useUTM();
-        trackEventFn = trackEvent;
-    } catch {
-        // UTM context not available, tracking will be skipped
-    }
-
     const shareAsImage = useCallback(async (item: Vocabulary) => {
         if (sharingId) return;
 
         // Track share modal open
-        trackEventFn?.('share_modal_open', {
+        trackUTMEvent('share_modal_open', getStoredUTMParams(), {
             vocabulary_id: item.id,
             vocabulary_english: item.english,
             vocabulary_bangla: item.bangla
@@ -57,37 +47,29 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     pixelRatio: 2,
                     skipAutoScale: true,
                     fontEmbedCSS: '',
+                    backgroundColor: 'white',
+                    style: { opacity: '1', transform: 'none', left: '0', top: '0', pointerEvents: 'auto' },
+                    filter: (node) => node.tagName !== 'LINK',
                 });
+                if (dataUrl.length < 1000) console.warn('Generated sharing image seems too small/empty');
 
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                const file = new File([blob], `vocabulary-${item.english.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+                const fileName = `vocabulary-${item.english.toLowerCase().replace(/\s+/g, '-')}.png`;
+                const title = `Vocabulary: ${item.english}`;
+                const text = `Check out this word: ${item.english} (${item.bangla})`;
 
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: `Vocabulary: ${item.english}`,
-                        text: `Check out this word: ${item.english} (${item.bangla})`,
-                    });
+                const result = await sharePng(dataUrl, fileName, title, text);
 
+                if (result.error) {
+                    throw result.error instanceof Error ? result.error : new Error(String(result.error));
+                }
+
+                if (result.downloaded) {
+                    toast.success('Sharing not supported. Image downloaded instead.');
+                } else {
                     // Track successful share
-                    trackEventFn?.('share_completed', {
+                    trackUTMEvent('share_completed', getStoredUTMParams(), {
                         vocabulary_id: item.id,
                         share_method: 'native_share'
-                    });
-                } else {
-                    const link = document.createElement('a');
-                    link.download = `vocabulary-${item.english.toLowerCase().replace(/\s+/g, '-')}.png`;
-                    link.href = dataUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    toast.success('Sharing not supported. Image downloaded instead.');
-
-                    // Track download fallback
-                    trackEventFn?.('share_completed', {
-                        vocabulary_id: item.id,
-                        share_method: 'download'
                     });
                 }
             } catch (error) {
@@ -95,7 +77,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 toast.error('Failed to generate sharing image. Please try again.');
 
                 // Track share error
-                trackEventFn?.('share_error', {
+                trackUTMEvent('share_error', getStoredUTMParams(), {
                     vocabulary_id: item.id,
                     error: error instanceof Error ? error.message : 'Unknown error'
                 });

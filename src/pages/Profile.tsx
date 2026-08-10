@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,15 +49,24 @@ export default function Profile() {
     fetchStats();
   }, [user]);
 
-  const handleSignOut = async () => {
+const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      toast.success("Signed out successfully");
-      navigate("/auth");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign out");
+        await signOut(auth);
+
+        // Also clear the native Google sign-in session (Capacitor). Without
+        // this, the stale native session survives logout and the Auth screen
+        // would auto-restore it, bouncing the user back in as signed-in.
+        if (Capacitor.isNativePlatform()) {
+            const { FirebaseAuthentication } = await import("@capacitor-firebase/authentication");
+            await FirebaseAuthentication.signOut();
+        }
+
+        toast.success("Signed out successfully");
+        navigate("/auth");
+    } catch (error: { message?: string }) {
+        toast.error(error.message || "Failed to sign out");
     }
-  };
+};
 
   if (loading) {
     return (

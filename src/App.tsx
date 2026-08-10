@@ -13,10 +13,10 @@ import { lazy, Suspense, useEffect } from "react";
 import Auth from "./authentication/Auth";
 import { Layout } from "@/layouts/Layout";
 import { LandingLayout } from "@/layouts/LandingLayout";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 import { AdminRoute } from "@/routes/AdminRoute";
 import { syncService } from "@/services/syncService";
+import { RouteSkeleton } from "@/components/skeletons";
 
 // Lazy load pages
 const Home = lazy(() => import("./pages/Home"));
@@ -39,8 +39,6 @@ const AdminAddResource = lazy(() => import("./admin/AdminAddResource"));
 const PrintVocabulary = lazy(() => import("./pages/PrintVocabulary"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const OnlineDictionary = lazy(() => import("./pages/OnlineDictionary"));
-const Flashcards = lazy(() => import("./pages/Flashcards"));
-const DownloadPage = lazy(() => import("./pages/DownloadPage"));
 const MeetDeveloper = lazy(() => import("./pages/MeetDeveloper"));
 const ListeningList = lazy(() => import("./pages/ListeningList"));
 const ListeningDetail = lazy(() => import("./pages/ListeningDetail"));
@@ -63,7 +61,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <RouteSkeleton />;
   }
 
   return user ? <>{children}</> : <Navigate to="/auth" />;
@@ -76,16 +74,11 @@ const ArabicEditRedirect = () => {
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    }>
+    <Suspense fallback={<RouteSkeleton />}>
       <Routes>
         {/* Auth routes */}
         <Route element={<LandingLayout />}>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/download" element={<DownloadPage />} />
         </Route>
 
         {/* App Pages - With Sidebar/BottomNav */}
@@ -101,7 +94,6 @@ const AppRoutes = () => {
           <Route path="/resources" element={<ResourcesGallery />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
           <Route path="/dictionary" element={<OnlineDictionary />} />
-          <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/meet-developer" element={<MeetDeveloper />} />
           <Route path="/ielts-listing" element={<ListeningList />} />
           <Route path="/ielts-listing/:id" element={<ListeningDetail />} />

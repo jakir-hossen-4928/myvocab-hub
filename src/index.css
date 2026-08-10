@@ -197,6 +197,38 @@ html.native-android [class*="fixed"] {
     overflow: hidden;
   }
 
+  /* ==========================================================================
+     SKELETON SHIMMER
+     Subtle left-to-right moving highlight used by skeleton loading placeholders.
+     Colours are driven by the theme tokens (--muted base + a soft light sweep)
+     so they look consistent in light and dark mode, and match the app-wide,
+     study-focused clean design.
+     ========================================================================== */
+  .sk-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sk-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--muted-foreground) / 0.06),
+      transparent
+    );
+    animation: sk-shimmer 1.8s infinite;
+  }
+
+  @keyframes sk-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   /* Improve touch targets on mobile */
   @media (max-width: 640px) {
 

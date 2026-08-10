@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  BookOpen, Layers, Globe, GraduationCap, Headphones, Heart,
+  BookOpen, Globe, GraduationCap, Headphones, Heart,
   User, Languages, Printer, Sparkles, LayoutDashboard,
   Users, Plus, Upload, Shield, FolderPlus, ArrowUpRight, Grid3x3, Home
 } from "lucide-react";
@@ -38,7 +38,6 @@ const sections: ControlSection[] = [
     headerClass: "from-blue-500 to-sky-600",
     items: [
       { title: "Vocabulary", description: "Browse all English words with Bangla meanings", path: "/vocabularies", icon: BookOpen, accent: "text-blue-600 bg-blue-100 dark:bg-blue-500/15 dark:text-blue-400" },
-      { title: "Flashcards", description: "Review words with interactive flashcards", path: "/flashcards", icon: Layers, accent: "text-violet-600 bg-violet-100 dark:bg-violet-500/15 dark:text-violet-400" },
       { title: "Dictionary", description: "Search the online English dictionary", path: "/dictionary", icon: Globe, accent: "text-sky-600 bg-sky-100 dark:bg-sky-500/15 dark:text-sky-400" },
       { title: "Resources", description: "Grammar guides and visual learning content", path: "/resources", icon: GraduationCap, accent: "text-orange-600 bg-orange-100 dark:bg-orange-500/15 dark:text-orange-400" },
       { title: "IELTS Listening", description: "Practice listening exercises", path: "/ielts-listing", icon: Headphones, accent: "text-cyan-600 bg-cyan-100 dark:bg-cyan-500/15 dark:text-cyan-400" },

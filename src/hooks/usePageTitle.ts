@@ -9,7 +9,7 @@ const DEFAULT_TITLE = 'MyVocab Hub';
 const ROUTE_TITLES: Record<string, string> = {
     '/': 'Welcome',
     '/auth': 'Sign In',
-    '/download': 'Download App',
+    
     '/meet-developer': 'Meet Developer',
     '/print-vocabularies': 'Print Vocabularies',
     '/home': 'Home',
@@ -20,7 +20,6 @@ const ROUTE_TITLES: Record<string, string> = {
     '/resources': 'Resources',
     '/dictionary': 'Online Dictionary',
     '/ai-activity': 'AI Activity',
-    '/flashcards': 'Flashcards',
     '/api-key-setup': 'API Key Setup',
     '/favorites': 'My Favorites',
     '/admin/analytics': 'Analytics',

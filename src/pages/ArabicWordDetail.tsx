@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { getCategoryById } from "@/data/saudiCategories";
 import { toPng } from "html-to-image";
+import { sharePng } from "@/services/nativeShareService";
 
 const SwipeHint = ({ onDismiss }: { onDismiss: () => void }) => (
   <motion.div
@@ -171,26 +172,25 @@ export default function ArabicWordDetail() {
           pixelRatio: 2,
           skipAutoScale: true,
           fontEmbedCSS: '',
+          backgroundColor: 'white',
+          style: { opacity: '1', transform: 'none', left: '0', top: '0', pointerEvents: 'auto' },
+          filter: (node) => node.tagName !== 'LINK',
         });
+        if (dataUrl.length < 1000) console.warn('Generated sharing image seems too small/empty');
 
-        const res = await fetch(dataUrl);
-        const blob = await res.blob();
-        const fileName = `arabic-vocabulary-${(word.arabic || word.transliteration || 'word').toLowerCase().replace(/\s+/g, '-')}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
+        const fileName = `arabic-vocabulary-${(word.arabic || word.transliteration || 'word').toLowerCase().replace(/[^\w\u0600-\u06FF]+/g, '-')}.png`;
+        const result = await sharePng(
+          dataUrl,
+          fileName,
+          `Arabic Vocabulary: ${word.arabic}`,
+          `Check out this Arabic word: ${word.arabic} (${word.bangla})`
+        );
 
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `Arabic Vocabulary: ${word.arabic}`,
-            text: `Check out this Arabic word: ${word.arabic} (${word.bangla})`,
-          });
-        } else {
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = dataUrl;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+        if (result.error) {
+          throw result.error instanceof Error ? result.error : new Error(String(result.error));
+        }
+
+        if (result.downloaded) {
           showSuccessToast("Sharing not supported. Image downloaded instead.");
         }
       } catch (error) {

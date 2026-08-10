@@ -12,6 +12,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { WindowScroller, AutoSizer, List, CellMeasurer, CellMeasurerCache } from "react-virtualized";
 import { Loader2, Download, Search, X, Heart } from "lucide-react";
 import { VocabularyDetailsModal } from "@/components/VocabularyDetailsModal";
+import { VocabGridSkeleton } from "@/components/skeletons";
 import { generateFavoritesPDF } from "@/lib/pdf/generateFavoritesPdf";
 import { motion } from "framer-motion";
 
@@ -212,9 +213,7 @@ export default function Favorites() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <VocabGridSkeleton count={6} />
         ) : favoriteVocabs.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-destructive/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">

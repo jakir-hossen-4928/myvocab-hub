@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://myvocab-hub.netlify.app/sitemap.xml

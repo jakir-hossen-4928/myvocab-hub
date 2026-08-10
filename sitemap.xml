@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+		<!--	created with www.mysitemapgenerator.com	-->
+		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+	<loc>https://myvocab-hub.netlify.app/</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/study</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/control-center</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/vocabularies</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/resources</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/arabic-vocabularies</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/arabic-resources</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/auth</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/download</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/home</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/profile</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/dictionary</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/flashcards</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/meet-developer</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/ielts-listing</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/print-vocabularies</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/favorites</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/vocabularies/add</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/vocabularies/bulk-add</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/grammar</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/resources</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/resources/add</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.6</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/grammar</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/analytics</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/dashboard</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/users</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/ai-enhancement-studio</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/arabic-ai-enhancement-studio</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/duplicates</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/ielts-listening-builder</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/arabic-vocabularies/add</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.6</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/arabic-resources</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://myvocab-hub.netlify.app/admin/arabic-resources/add</loc>
+	<lastmod>2026-08-10T20:42:20+01:00</lastmod>
+	<priority>0.6</priority>
+</url>
+</urlset>

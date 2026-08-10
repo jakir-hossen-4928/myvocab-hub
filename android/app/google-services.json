@@ -1,0 +1,85 @@
+{
+  "project_info": {
+    "project_number": "412154848714",
+    "firebase_url": "https://ielts-jakir-default-rtdb.firebaseio.com",
+    "project_id": "ielts-jakir",
+    "storage_bucket": "ielts-jakir.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412154848714:android:c507712b3db12066675b33",
+        "android_client_info": {
+          "package_name": "com.aivocab.inc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "412154848714-uu628gfb8872g47pe15bktkjr8kdc9c0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTuDjSckxut1FgbMH5iYUScE2EQmLrnhc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "412154848714-uu628gfb8872g47pe15bktkjr8kdc9c0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412154848714:android:e20ea423d521cd52675b33",
+        "android_client_info": {
+          "package_name": "com.sajuriyastudio.myvocabhub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "412154848714-d5ot11dh4cjmrunmj6ilvia7e0kpoa47.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sajuriyastudio.myvocabhub",
+            "certificate_hash": "8b02939a1ebd1f960c3a845ec13034dfa7244854"
+          }
+        },
+        {
+          "client_id": "412154848714-jh2ujsci82jr8ql2glocu9govsj5e0ds.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sajuriyastudio.myvocabhub",
+            "certificate_hash": "846417701cf47243ffb438df58c7a5bd5cdd6df0"
+          }
+        },
+        {
+          "client_id": "412154848714-uu628gfb8872g47pe15bktkjr8kdc9c0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTuDjSckxut1FgbMH5iYUScE2EQmLrnhc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "412154848714-uu628gfb8872g47pe15bktkjr8kdc9c0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
