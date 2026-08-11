@@ -37,10 +37,36 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'MyVocab Hub',
+        name: 'MyVocab Hub - Learn English, Bangla & Arabic Vocabulary',
         short_name: 'MyVocab Hub',
-        description: 'Learn new words with AI',
-        theme_color: '#ffffff',
+        description: 'Build your English, Bangla, and Saudi Arabic vocabulary with MyVocab Hub. Save words, review daily, and learn with real-life examples.',
+        lang: 'en',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#0d6efd',
+        categories: ['education', 'utilities', 'productivity'],
+        shortcuts: [
+          {
+            name: 'Vocabularies',
+            short_name: 'Words',
+            description: 'Browse English words with Bangla meanings',
+            url: '/vocabularies',
+          },
+          {
+            name: 'Study',
+            short_name: 'Study',
+            description: 'Flashcards, quizzes and daily progress',
+            url: '/study',
+          },
+          {
+            name: 'Resources',
+            short_name: 'Resources',
+            description: 'Grammar guides and learning resources',
+            url: '/resources',
+          },
+        ],
         icons: [
           {
             src: 'web-app-manifest-192x192.png',
